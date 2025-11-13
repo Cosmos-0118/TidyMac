@@ -2,12 +2,20 @@
 
 import Foundation
 
-struct FileDetail: Identifiable {
-    let id = UUID()
+struct FileDetail: Identifiable, Codable {
+    let id: UUID
     let name: String
     let size: Int64
     let modificationDate: Date
     let path: String
+
+    init(id: UUID = UUID(), name: String, size: Int64, modificationDate: Date, path: String) {
+        self.id = id
+        self.name = name
+        self.size = size
+        self.modificationDate = modificationDate
+        self.path = path
+    }
 }
 
 

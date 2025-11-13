@@ -1,0 +1,20 @@
+[
+  {
+    "id": "2E4BCE5D-8798-4F5F-AAD5-2DF36AFA7E9F",
+    "name": "Old IDE",
+    "bundleID": "com.example.oldide",
+    "bundlePath": "/Applications/Old IDE.app"
+  },
+  {
+    "id": "CE7F74F1-4488-4DD3-8A5B-CC4AF651E2DE",
+    "name": "Legacy Tools",
+    "bundleID": "com.example.legacytools",
+    "bundlePath": "~/Applications/Legacy Tools.app"
+  },
+  {
+    "id": "6B6C9F1F-9764-4DF2-9FA3-B3623556FF01",
+    "name": "Unused Simulator",
+    "bundleID": "com.example.simulator",
+    "bundlePath": "/Applications/Utilities/Unused Simulator.app"
+  }
+]

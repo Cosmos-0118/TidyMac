@@ -2,7 +2,7 @@
 
 import Foundation
 
-struct StorageInfo {
+struct StorageInfo: Codable {
     var totalSpace: Int64
     var freeSpace: Int64
     var usedSpace: Int64

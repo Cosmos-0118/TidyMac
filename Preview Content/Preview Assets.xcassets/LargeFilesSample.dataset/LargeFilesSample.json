@@ -1,0 +1,23 @@
+[
+  {
+    "id": "7C4CB6F8-9C41-4C7F-8D0D-057B0DAD6AB2",
+    "name": "XcodeCache.dylib",
+    "size": 2147483648,
+    "modificationDate": "2024-08-12T14:22:00Z",
+    "path": "/Users/example/Library/Developer/Xcode/DerivedData/Cache/XcodeCache.dylib"
+  },
+  {
+    "id": "92B7E13A-6EAC-4B5E-9F7D-26D9EE9A3A4E",
+    "name": "OldSimulatorImage.dmg",
+    "size": 3298534883,
+    "modificationDate": "2024-05-04T08:45:00Z",
+    "path": "/Users/example/Library/Developer/CoreSimulator/Images/OldSimulatorImage.dmg"
+  },
+  {
+    "id": "8A1F25F4-62D6-4320-BB02-048E59C03797",
+    "name": "ArchivedLogs.zip",
+    "size": 1577058304,
+    "modificationDate": "2023-12-31T23:59:00Z",
+    "path": "/Users/example/Documents/Logs/ArchivedLogs.zip"
+  }
+]

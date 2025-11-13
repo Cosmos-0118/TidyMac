@@ -20,9 +20,23 @@ final class MacCleanerUITests: XCTestCase {
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
+        app.launchEnvironment["UITEST_SEED_DIAGNOSTICS"] = "1"
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+    }
+
+    func testDiagnosticsButtonExists() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["UITEST_SEED_DIAGNOSTICS"] = "1"
+        app.launch()
+
+        let diagnosticsButton = app.buttons.matching(identifier: "DiagnosticsButton").firstMatch
+        XCTAssertTrue(diagnosticsButton.waitForExistence(timeout: 3))
+        diagnosticsButton.click()
+
+    let categoryFilter = app.popUpButtons["Diagnostics category filter"]
+    XCTAssertTrue(categoryFilter.waitForExistence(timeout: 5))
     }
 
     func testLaunchPerformance() throws {
