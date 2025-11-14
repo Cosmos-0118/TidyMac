@@ -1,5 +1,8 @@
 import Foundation
 import Darwin
+#if canImport(CryptoKit)
+import CryptoKit
+#endif
 
 /// Moves the item at `path` to the user's Trash, preserving safety semantics.
 func moveToTrash(_ path: String, fileManager: FileManager = .default) throws {
@@ -14,6 +17,33 @@ func formatByteCount(_ bytes: Int64) -> String {
     formatter.allowedUnits = [.useGB, .useMB, .useKB]
     return formatter.string(fromByteCount: bytes)
 }
+
+/// Generates a stable content hash for the file at `path` using SHA256. Returns `nil` if the file cannot be read.
+func contentHash(forFileAt path: String, bufferSize: Int = 64 * 1024) -> String? {
+#if canImport(CryptoKit)
+    guard let stream = InputStream(fileAtPath: path) else { return nil }
+    stream.open()
+    defer { stream.close() }
+
+    var buffer = [UInt8](repeating: 0, count: bufferSize)
+    var hasher = CryptoKit.SHA256()
+    while stream.hasBytesAvailable {
+        let read = stream.read(&buffer, maxLength: buffer.count)
+        if read < 0 { return nil }
+        if read == 0 { break }
+        hasher.update(data: Data(buffer[0..<read]))
+    }
+    return digestToHex(hasher.finalize())
+#else
+    return nil
+#endif
+}
+
+#if canImport(CryptoKit)
+private func digestToHex<D: Sequence>(_ digest: D) -> String where D.Element == UInt8 {
+    digest.map { String(format: "%02x", $0) }.joined()
+}
+#endif
 
 /// Returns `true` when the path appears to be an Apple-managed cache protected by SIP or root ownership.
 func isSystemProtectedCachePath(_ path: String) -> Bool {

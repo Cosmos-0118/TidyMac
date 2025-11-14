@@ -2,19 +2,32 @@
 
 import Foundation
 
+struct FileDuplicateInfo: Codable, Equatable {
+    let groupIdentifier: String
+    let isPrimary: Bool
+    let siblingPaths: [String]
+    let totalCount: Int
+}
+
 struct FileDetail: Identifiable, Codable {
     let id: UUID
     let name: String
     let size: Int64
     let modificationDate: Date
     let path: String
+    let duplicateInfo: FileDuplicateInfo?
 
-    init(id: UUID = UUID(), name: String, size: Int64, modificationDate: Date, path: String) {
+    init(id: UUID = UUID(), name: String, size: Int64, modificationDate: Date, path: String, duplicateInfo: FileDuplicateInfo? = nil) {
         self.id = id
         self.name = name
         self.size = size
         self.modificationDate = modificationDate
         self.path = path
+        self.duplicateInfo = duplicateInfo
+    }
+
+    func updatingDuplicateInfo(_ info: FileDuplicateInfo?) -> FileDetail {
+        FileDetail(id: id, name: name, size: size, modificationDate: modificationDate, path: path, duplicateInfo: info)
     }
 }
 

@@ -48,6 +48,7 @@ struct CleanupCategory: Identifiable, Equatable {
         let detail: String?
         var isSelected: Bool
         var reasons: [CleanupReason]
+        let confidence: CleanupConfidence?
         let metadata: CleanupCandidate?
 
         init(
@@ -57,6 +58,7 @@ struct CleanupCategory: Identifiable, Equatable {
             detail: String?,
             isSelected: Bool = true,
             reasons: [CleanupReason] = [],
+            confidence: CleanupConfidence? = nil,
             metadata: CleanupCandidate? = nil
         ) {
             let normalizedPath = URL(fileURLWithPath: path).path
@@ -67,6 +69,7 @@ struct CleanupCategory: Identifiable, Equatable {
             self.detail = detail
             self.isSelected = isSelected
             self.reasons = reasons
+            self.confidence = confidence
             self.metadata = metadata
         }
 

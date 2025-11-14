@@ -53,6 +53,7 @@
 		79D4B2A22D0C05000061176E /* CleanupServiceHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */; };
 		79D4B2A42D0C05000061176E /* SystemCacheCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */; };
 		79D4C6002F0D14000061176E /* CleanupInventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */; };
+		79D4C6A72F0D1C000061176E /* CleanupConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */; };
 		79D4C6022F0D14000061176E /* CleanupInventoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -123,6 +124,7 @@
 		79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationInventoryServiceTests.swift; sourceTree = "<group>"; };
 		79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceHelpers.swift; sourceTree = "<group>"; };
 		79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCacheCleanupService.swift; sourceTree = "<group>"; };
+		79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupConfidence.swift; sourceTree = "<group>"; };
 		79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryService.swift; sourceTree = "<group>"; };
 		79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -264,6 +266,7 @@
 				79D465B82C0822F40061176E /* FileInfo.swift */,
 				79D465BA2C0826820061176E /* SystemMonitorHelper.swift */,
 				79D465CC2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift */,
+				79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */,
 				79D4661B2C0B0A000061176E /* DeletionPreferences.swift */,
 				79D4660C2C0B0A000061176E /* Application.swift */,
 				79D466122C0B0A000061176E /* DeveloperOperations.swift */,
@@ -459,6 +462,7 @@
 				79D465AC2C081E760061176E /* LargeFilesFinder.swift in Sources */,
 				79D465B92C0822F40061176E /* FileInfo.swift in Sources */,
 				79D465BB2C0826820061176E /* SystemMonitorHelper.swift in Sources */,
+				79D4C6A72F0D1C000061176E /* CleanupConfidence.swift in Sources */,
 				79D465D62C0A50000061176E /* CleanupModels.swift in Sources */,
 				79D465D72C0A50010061176E /* CleanupService.swift in Sources */,
 				79D465D82C0A50020061176E /* CleanupProgress.swift in Sources */,

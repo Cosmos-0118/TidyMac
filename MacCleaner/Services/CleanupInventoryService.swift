@@ -129,6 +129,7 @@ struct CleanupCandidate: Identifiable, Equatable {
     let codeSignatureHash: String?
     let recentProcess: RunningApplicationSnapshot?
     let reasons: [CleanupReason]
+    let confidence: CleanupConfidence?
 
     init(
         path: String,
@@ -141,7 +142,8 @@ struct CleanupCandidate: Identifiable, Equatable {
         associatedBundlePath: String?,
         codeSignatureHash: String?,
         recentProcess: RunningApplicationSnapshot?,
-        reasons: [CleanupReason]
+        reasons: [CleanupReason],
+        confidence: CleanupConfidence? = nil
     ) {
         let normalized = URL(fileURLWithPath: path).standardizedFileURL.path
         self.id = normalized
@@ -156,6 +158,7 @@ struct CleanupCandidate: Identifiable, Equatable {
         self.codeSignatureHash = codeSignatureHash
         self.recentProcess = recentProcess
         self.reasons = reasons
+        self.confidence = confidence
     }
 
     var detailSummary: String {
@@ -182,7 +185,37 @@ struct CleanupCandidate: Identifiable, Equatable {
             formatter.unitsStyle = .short
             components.append("Touched \(formatter.localizedString(for: lastDate, relativeTo: Date()))")
         }
+        if let confidence {
+            components.append("Confidence: \(confidence.tier.displayName) (\(confidence.scoreDescription))")
+            if let rationale = confidence.rationale.first {
+                components.append(rationale)
+            }
+        }
         return components.isEmpty ? category.label : components.joined(separator: " • ")
+    }
+
+    func updating(confidence newConfidence: CleanupConfidence?, additionalReasons: [CleanupReason] = []) -> CleanupCandidate {
+        var mergedReasons: [CleanupReason] = []
+        var seen: Set<String> = []
+        for reason in reasons + additionalReasons {
+            if seen.insert(reason.id).inserted {
+                mergedReasons.append(reason)
+            }
+        }
+        return CleanupCandidate(
+            path: path,
+            displayName: displayName,
+            category: category,
+            estimatedSize: estimatedSize,
+            resourceValues: resourceValues,
+            spotlight: spotlight,
+            associatedBundleIdentifier: associatedBundleIdentifier,
+            associatedBundlePath: associatedBundlePath,
+            codeSignatureHash: codeSignatureHash,
+            recentProcess: recentProcess,
+            reasons: mergedReasons,
+            confidence: newConfidence ?? confidence
+        )
     }
 }
 
@@ -354,7 +387,24 @@ final class CleanupInventoryService: CleanupInventoryServicing {
         }
 
         let deduped = dedupeByPath(aggregated)
-        let sorted = deduped.sorted { lhs, rhs in
+        let duplicateMap = duplicateContexts(for: deduped)
+        let scored = deduped.map { candidate -> CleanupCandidate in
+            let evaluation = computeConfidence(for: candidate, duplicateContext: duplicateMap[candidate.id])
+            let additionalReasons = evaluation.duplicateReason.map { [$0] } ?? []
+            return candidate.updating(confidence: evaluation.confidence, additionalReasons: additionalReasons)
+        }
+
+        let sorted = scored.sorted { lhs, rhs in
+            let leftTier = lhs.confidence?.tier.sortRank ?? CleanupConfidence.RiskTier.review.sortRank
+            let rightTier = rhs.confidence?.tier.sortRank ?? CleanupConfidence.RiskTier.review.sortRank
+            if leftTier != rightTier {
+                return leftTier < rightTier
+            }
+            let leftScore = lhs.confidence?.score ?? 0
+            let rightScore = rhs.confidence?.score ?? 0
+            if leftScore != rightScore {
+                return leftScore > rightScore
+            }
             switch (lhs.estimatedSize, rhs.estimatedSize) {
             case let (l?, r?) where l != r:
                 return l > r
@@ -376,7 +426,8 @@ final class CleanupInventoryService: CleanupInventoryServicing {
                 message: "Inventory scan produced \(sorted.count) candidate(s).",
                 metadata: [
                     "sources": sources.map { $0.telemetryKey }.joined(separator: ","),
-                    "permissionFailures": "\(permissionFailures.count)"
+                    "permissionFailures": "\(permissionFailures.count)",
+                    "autoTier": "\(sorted.filter { $0.confidence?.tier == .auto }.count)"
                 ]
             )
         }
@@ -392,6 +443,266 @@ final class CleanupInventoryService: CleanupInventoryServicing {
 
 private extension CleanupInventoryService {
     typealias DiscoveryOutcome = (candidates: [CleanupCandidate], permissionDenied: [String])
+
+    private struct ConfidenceComputationResult {
+        let confidence: CleanupConfidence
+        let duplicateReason: CleanupReason?
+    }
+
+    private struct DuplicateContext {
+        let groupID: String
+        let isPrimary: Bool
+        let siblings: [CleanupCandidate]
+        let primary: CleanupCandidate
+        let totalCount: Int
+    }
+
+    private struct DuplicateSignature: Hashable {
+        let size: Int64
+        let hash: String
+    }
+
+    private func duplicateContexts(for candidates: [CleanupCandidate]) -> [String: DuplicateContext] {
+        var signatureMap: [DuplicateSignature: [CleanupCandidate]] = [:]
+        var hashCache: [String: String] = [:]
+        let minimumSize: Int64 = 5 * 1_048_576
+
+        for candidate in candidates {
+            guard candidate.resourceValues.isDirectory != true else { continue }
+            guard let size = candidate.estimatedSize
+                ?? candidate.resourceValues.totalAllocatedSize
+                ?? candidate.resourceValues.fileSize else { continue }
+            guard size >= minimumSize else { continue }
+            guard fileManager.isReadableFile(atPath: candidate.path) else { continue }
+
+            let hash: String
+            if let cached = hashCache[candidate.path] {
+                hash = cached
+            } else if let computed = contentHash(forFileAt: candidate.path) {
+                hashCache[candidate.path] = computed
+                hash = computed
+            } else {
+                continue
+            }
+
+            let signature = DuplicateSignature(size: size, hash: hash)
+            signatureMap[signature, default: []].append(candidate)
+        }
+
+        var contexts: [String: DuplicateContext] = [:]
+    for (signature, group) in signatureMap where group.count > 1 {
+            let sorted = group.sorted { lhs, rhs in
+                let leftDate = lhs.resourceValues.lastRelevantDate ?? lhs.spotlight.lastUsedDate ?? Date.distantPast
+                let rightDate = rhs.resourceValues.lastRelevantDate ?? rhs.spotlight.lastUsedDate ?? Date.distantPast
+                return leftDate > rightDate
+            }
+            guard let primary = sorted.first else { continue }
+            for (index, candidate) in sorted.enumerated() {
+                let siblings = sorted.enumerated().filter { $0.offset != index }.map { $0.element }
+                contexts[candidate.id] = DuplicateContext(
+                    groupID: signature.hash,
+                    isPrimary: index == 0,
+                    siblings: siblings,
+                    primary: primary,
+                    totalCount: sorted.count
+                )
+            }
+        }
+
+        return contexts
+    }
+
+    private func computeConfidence(for candidate: CleanupCandidate, duplicateContext: DuplicateContext?) -> ConfidenceComputationResult {
+        let now = Date()
+        var rationale: [String] = []
+
+        let age = ageScore(for: candidate, now: now, rationale: &rationale)
+        let ownership = ownershipScore(for: candidate, rationale: &rationale)
+        let activity = activityScore(for: candidate, now: now, rationale: &rationale)
+        let size = sizeScore(for: candidate, rationale: &rationale)
+        let duplicate = duplicateScore(for: candidate, context: duplicateContext, rationale: &rationale)
+
+        switch candidate.category {
+        case .browserCaches:
+            rationale.append("Browser cache can be safely rebuilt")
+        case .orphanedApplicationSupport:
+            rationale.append("No linked application data")
+        case .orphanedPreferences:
+            rationale.append("Legacy preference file")
+        case .sharedInstallers:
+            rationale.append("Installer image copy")
+        }
+
+        let weighted = age * 0.26 + ownership * 0.24 + activity * 0.18 + size * 0.17 + duplicate.score * 0.15
+        let categoryBonus: Double
+        switch candidate.category {
+        case .browserCaches:
+            categoryBonus = 0.12
+        case .sharedInstallers:
+            categoryBonus = 0.15
+        case .orphanedApplicationSupport:
+            categoryBonus = 0.08
+        case .orphanedPreferences:
+            categoryBonus = 0.05
+        }
+
+        let finalScore = min(max(weighted + categoryBonus, 0), 1)
+        let percentage = round(finalScore * 100)
+        let tier = CleanupConfidence.RiskTier.fromScore(percentage)
+        let breakdown = CleanupConfidenceBreakdown(
+            ageScore: age,
+            ownershipScore: ownership,
+            activityScore: activity,
+            sizeScore: size,
+            duplicateScore: duplicate.score
+        )
+
+    let trimmedRationale = Array(rationale.uniqued().prefix(5))
+
+        let confidence = CleanupConfidence(
+            score: percentage,
+            tier: tier,
+            breakdown: breakdown,
+            rationale: trimmedRationale
+        )
+
+        return ConfidenceComputationResult(confidence: confidence, duplicateReason: duplicate.reason)
+    }
+
+    private func ageScore(for candidate: CleanupCandidate, now: Date, rationale: inout [String]) -> Double {
+        if let lastDate = candidate.resourceValues.lastRelevantDate ?? candidate.spotlight.lastUsedDate {
+            let days = max(0, Calendar.current.dateComponents([.day], from: lastDate, to: now).day ?? 0)
+            let score: Double
+            switch days {
+            case 0..<14:
+                score = 0.2
+            case 14..<30:
+                score = 0.35
+            case 30..<90:
+                score = 0.55
+            case 90..<180:
+                score = 0.75
+            case 180..<365:
+                score = 0.9
+            default:
+                score = 1.0
+            }
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .short
+            rationale.append("No activity for \(formatter.localizedString(for: lastDate, relativeTo: now))")
+            return score
+        }
+
+        rationale.append("No usage metadata available")
+        return 0.6
+    }
+
+    private func ownershipScore(for candidate: CleanupCandidate, rationale: inout [String]) -> Double {
+        if let bundleID = candidate.associatedBundleIdentifier ?? candidate.spotlight.bundleIdentifier {
+            if candidate.associatedBundlePath == nil {
+                rationale.append("Owner app \(bundleID) not installed")
+                return 0.95
+            } else {
+                rationale.append("Owner app \(bundleID) installed")
+                return 0.25
+            }
+        }
+
+        rationale.append("No owner application")
+        return 1.0
+    }
+
+    private func activityScore(for candidate: CleanupCandidate, now: Date, rationale: inout [String]) -> Double {
+        guard let process = candidate.recentProcess else {
+            rationale.append("No running processes")
+            return 0.9
+        }
+
+        if process.isActive {
+            rationale.append("Owner app currently active")
+            return 0.0
+        }
+
+        if let launchDate = process.launchDate {
+            let interval = now.timeIntervalSince(launchDate)
+            switch interval {
+            case ..<3_600:
+                rationale.append("Owner app used within the last hour")
+                return 0.1
+            case ..<21_600:
+                rationale.append("Owner app used earlier today")
+                return 0.25
+            case ..<86_400:
+                rationale.append("Owner app used today")
+                return 0.35
+            case ..<604_800:
+                rationale.append("Owner app used this week")
+                return 0.55
+            case ..<2_592_000:
+                rationale.append("Owner app idle for weeks")
+                return 0.7
+            default:
+                let formatter = RelativeDateTimeFormatter()
+                formatter.unitsStyle = .short
+                rationale.append("Owner app idle since \(formatter.localizedString(for: launchDate, relativeTo: now))")
+                return 0.85
+            }
+        }
+
+        rationale.append("Owner app recently seen")
+        return 0.4
+    }
+
+    private func sizeScore(for candidate: CleanupCandidate, rationale: inout [String]) -> Double {
+        guard let size = candidate.estimatedSize
+            ?? candidate.resourceValues.totalAllocatedSize
+            ?? candidate.resourceValues.fileSize else {
+            rationale.append("Size unknown")
+            return 0.5
+        }
+
+        let score: Double
+        switch size {
+        case let value where value >= 10 * 1_073_741_824: // >= 10 GB
+            score = 1.0
+        case let value where value >= 1 * 1_073_741_824: // >= 1 GB
+            score = 0.85
+        case let value where value >= 512 * 1_048_576: // >= 512 MB
+            score = 0.7
+        case let value where value >= 200 * 1_048_576: // >= 200 MB
+            score = 0.55
+        case let value where value >= 50 * 1_048_576: // >= 50 MB
+            score = 0.4
+        default:
+            score = 0.25
+        }
+
+        rationale.append("Size \(formatByteCount(size))")
+        return score
+    }
+
+    private func duplicateScore(for candidate: CleanupCandidate, context: DuplicateContext?, rationale: inout [String]) -> (score: Double, reason: CleanupReason?) {
+        guard let context else {
+            return (0.5, nil)
+        }
+
+        if context.isPrimary {
+            rationale.append("Primary copy for duplicate set (\(context.totalCount) copies)")
+            return (0.2, nil)
+        }
+
+        let primaryName = URL(fileURLWithPath: context.primary.path).lastPathComponent
+        let detail: String
+        if let firstSibling = context.siblings.first {
+            detail = "Matches \(URL(fileURLWithPath: firstSibling.path).lastPathComponent)"
+        } else {
+            detail = "Matches \(primaryName)"
+        }
+
+        rationale.append("Older duplicate - primary copy at \(primaryName)")
+        let reason = CleanupReason(code: "duplicate", label: "Duplicate copy", detail: detail)
+        return (1.0, reason)
+    }
 
     func discoverBrowserCaches() -> DiscoveryOutcome {
         var results: [CleanupCandidate] = []
