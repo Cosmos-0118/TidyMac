@@ -82,8 +82,8 @@ This roadmap aligns our cleanup functionality with macOS best practices: score e
 
 ## Milestone F — Cleanup Intelligence & Safety
 
-- [ ] Step 20 - Add cleanup telemetry, reason codes, and `FileManager.trashItem` support; expose guard decisions in the UI (see `cleanulogic.md` Phase 0).
-- [ ] Step 21 - Ship `CleanupInventoryService` with enriched metadata (bundle IDs, Spotlight info) and expand scanners to browser caches, orphaned support folders, and installers (Phase 1).
+- [x] Step 20 - Add cleanup telemetry, reason codes, and `FileManager.trashItem` support; expose guard decisions in the UI (see `cleanulogic.md` Phase 0).
+- [x] Step 21 - Ship `CleanupInventoryService` with enriched metadata (bundle IDs, Spotlight info) and expand scanners to browser caches, orphaned support folders, and installers (Phase 1).
 - [ ] Step 22 - Implement the heuristic scoring engine, risk tiers, and duplicate detection, surfacing explanations per candidate (Phase 2).
 - [ ] Step 23 - Introduce quarantine storage, manifest + checksum restore, and planned privileged passes via an `SMAppService` helper (Phase 3 & 4).
 - [ ] Step 24 - Upgrade the cleanup UI with confidence gauges, quarantine browser, and exportable dry-run reports while adding regression tests for scoring/quarantine restores (Phase 5).

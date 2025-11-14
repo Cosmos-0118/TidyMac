@@ -185,7 +185,8 @@ final class FileSystemLargeFileScanningService: LargeFileScanningService {
 
         for path in permittedPaths {
             do {
-                try manager.removeItem(atPath: path)
+                var resultingURL: NSURL?
+                try manager.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: &resultingURL)
             } catch {
                 if isPermissionError(error) {
                     privilegedTargets.append(path)

@@ -50,6 +50,10 @@
 		79D4A2032D0C01000061176E /* DiagnosticsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2022D0C01000061176E /* DiagnosticsPanel.swift */; };
 		79D4A2112D0C01000061176E /* LargeFileScanningServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */; };
 		79D4A2132D0C01000061176E /* ApplicationInventoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */; };
+		79D4B2A22D0C05000061176E /* CleanupServiceHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */; };
+		79D4B2A42D0C05000061176E /* SystemCacheCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */; };
+		79D4C6002F0D14000061176E /* CleanupInventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */; };
+		79D4C6022F0D14000061176E /* CleanupInventoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +121,10 @@
 		79D4A2022D0C01000061176E /* DiagnosticsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DiagnosticsPanel.swift; path = MacCleaner/Views/Common/DiagnosticsPanel.swift; sourceTree = SOURCE_ROOT; };
 		79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileScanningServiceTests.swift; sourceTree = "<group>"; };
 		79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationInventoryServiceTests.swift; sourceTree = "<group>"; };
+		79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceHelpers.swift; sourceTree = "<group>"; };
+		79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCacheCleanupService.swift; sourceTree = "<group>"; };
+		79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryService.swift; sourceTree = "<group>"; };
+		79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,6 +200,9 @@
 			isa = PBXGroup;
 			children = (
 				79D4658E2C081E070061176E /* MacCleanerTests.swift */,
+				79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */,
+				79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */,
+				79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */,
 			);
 			path = MacCleanerTests;
 			sourceTree = "<group>";
@@ -268,6 +279,9 @@
 				79D465D22C0A50020061176E /* CleanupProgress.swift */,
 				79D465D32C0A50030061176E /* CleanupServiceRegistry.swift */,
 				79D465D42C0A50040061176E /* SystemCleanupServices.swift */,
+				79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */,
+				79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */,
+				79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */,
 				79D466042C0B0A000061176E /* LargeFileScanningService.swift */,
 				79D466082C0B0A000061176E /* ApplicationInventoryService.swift */,
 				79D4660E2C0B0A000061176E /* DeveloperOperationsService.swift */,
@@ -450,6 +464,9 @@
 				79D465D82C0A50020061176E /* CleanupProgress.swift in Sources */,
 				79D465D92C0A50030061176E /* CleanupServiceRegistry.swift in Sources */,
 				79D465DA2C0A50040061176E /* SystemCleanupServices.swift in Sources */,
+				79D4B2A42D0C05000061176E /* SystemCacheCleanupService.swift in Sources */,
+				79D4C6002F0D14000061176E /* CleanupInventoryService.swift in Sources */,
+				79D4B2A22D0C05000061176E /* CleanupServiceHelpers.swift in Sources */,
 				79D465DB2C0A50050061176E /* DashboardViewModel.swift in Sources */,
 				79D466012C0B0A000061176E /* FileSystemErrors.swift in Sources */,
 				79D4661E2C0B0A000061176E /* AppSupportStorage.swift in Sources */,
@@ -473,6 +490,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				79D4658F2C081E070061176E /* MacCleanerTests.swift in Sources */,
+				79D4A2112D0C01000061176E /* LargeFileScanningServiceTests.swift in Sources */,
+				79D4A2132D0C01000061176E /* ApplicationInventoryServiceTests.swift in Sources */,
+				79D4C6022F0D14000061176E /* CleanupInventoryServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

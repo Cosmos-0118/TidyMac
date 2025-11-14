@@ -24,8 +24,10 @@ final class LargeFileScanningServiceTests: XCTestCase {
             maxResults: 10
         ) { _ in }
 
-        XCTAssertEqual(result.files.count, 1)
-        XCTAssertEqual(result.files.first?.path, fileURL.path)
+    XCTAssertEqual(result.files.count, 1)
+    let actualPath = (result.files.first?.path ?? "") as NSString
+    let expectedPath = fileURL.path as NSString
+    XCTAssertEqual(actualPath.resolvingSymlinksInPath, expectedPath.resolvingSymlinksInPath)
         XCTAssertFalse(result.permissionIssue)
     }
 
@@ -135,11 +137,20 @@ private final class MockPrivilegedDeletionHandler: PrivilegedDeletionHandling {
 
 private final class MockFileManager: FileManager {
     var permissionErrorPaths: Set<String> = []
+    var trashedPaths: [String] = []
 
     override func removeItem(atPath path: String) throws {
         if permissionErrorPaths.contains(path) {
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM), userInfo: nil)
         }
         try super.removeItem(atPath: path)
+    }
+
+    override func trashItem(at url: URL, resultingItemURL outResultingURL: AutoreleasingUnsafeMutablePointer<NSURL?>?) throws {
+        if permissionErrorPaths.contains(url.path) {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM), userInfo: nil)
+        }
+        trashedPaths.append(url.path)
+        try super.removeItem(at: url)
     }
 }

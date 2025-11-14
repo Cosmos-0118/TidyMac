@@ -515,6 +515,22 @@ private struct CleanupItemRow: View {
 						.font(DesignSystem.Typography.caption)
 						.foregroundColor(palette.secondaryText)
 				}
+
+				if !item.reasons.isEmpty {
+					VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+						ForEach(item.reasons) { reason in
+							Text("• \(reason.labelLine)")
+								.font(DesignSystem.Typography.caption)
+								.foregroundColor(palette.secondaryText)
+						}
+					}
+				}
+
+				let decision = item.guardDecision
+				let descriptor = guardDescriptor(for: decision)
+				Label(descriptor.title, systemImage: descriptor.icon)
+					.font(DesignSystem.Typography.caption)
+					.foregroundColor(descriptor.color(palette))
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
 		}
@@ -607,6 +623,27 @@ private struct CleanupCategoryItemsView: View {
 			return "\(base) • ~\(formatBytes(size))"
 		}
 		return base
+	}
+
+}
+
+private extension CleanupReason {
+	var labelLine: String {
+		if let detail, !detail.isEmpty {
+			return "\(label) — \(detail)"
+		}
+		return label
+	}
+}
+
+private func guardDescriptor(for decision: DeletionGuard.Decision) -> (title: String, icon: String, color: (DesignSystemPalette) -> Color) {
+	switch decision {
+	case .allow:
+		return ("Allowed", "checkmark.shield.fill", { $0.accentGreen })
+	case .excluded:
+		return ("Excluded by Preferences", "shield.fill", { $0.accentGray })
+	case .restricted:
+		return ("Restricted", "hand.raised.fill", { $0.accentRed })
 	}
 }
 

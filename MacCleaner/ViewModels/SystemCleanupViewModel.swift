@@ -89,6 +89,16 @@ final class SystemCleanupViewModel: ObservableObject {
             ]
         )
 
+        for category in activeCategories {
+            for item in category.selectedItems {
+                Diagnostics.info(
+                    category: .cleanup,
+                    message: dryRun ? "Queued cleanup preview." : "Queued cleanup item.",
+                    metadata: telemetryMetadata(for: item, step: category.step, dryRun: dryRun)
+                )
+            }
+        }
+
         if dryRun {
             let snapshot = DryRunPreviewSnapshot.fromCleanupCategories(activeCategories)
             preferencesStore.record(preview: snapshot)
@@ -142,6 +152,12 @@ final class SystemCleanupViewModel: ObservableObject {
                 }
             }
 
+            Diagnostics.info(
+                category: .cleanup,
+                message: "Cleanup step completed: \(step.title)",
+                metadata: cleanupOutcomeMetadata(step: step, outcome: outcome, selectedItems: selectedItems, dryRun: dryRun)
+            )
+
             if outcome.success {
                 stepStates[step] = .success(message: outcome.message)
             } else {
@@ -192,4 +208,43 @@ final class SystemCleanupViewModel: ObservableObject {
         }
         return min(max(accumulated / totalWeight, 0), 1)
     }
+
+    private func telemetryMetadata(for item: CleanupCategory.CleanupItem, step: CleanupStep, dryRun: Bool) -> [String: String] {
+        var metadata: [String: String] = [
+            "step": step.title,
+            "path": item.path,
+            "decision": item.guardDecision.telemetryValue,
+            "dryRun": dryRun ? "true" : "false"
+        ]
+        if let size = item.size {
+            metadata["sizeBytes"] = String(size)
+            metadata["sizeReadable"] = formatByteCount(size)
+        }
+        if !item.reasons.isEmpty {
+            metadata["reasonCodes"] = item.reasons.map { $0.id }.joined(separator: ",")
+            metadata["reasonLabels"] = item.reasons.map { $0.label }.joined(separator: " | ")
+        }
+        return metadata
+    }
+
+    private func cleanupOutcomeMetadata(step: CleanupStep, outcome: CleanupOutcome, selectedItems: [CleanupCategory.CleanupItem], dryRun: Bool) -> [String: String] {
+        var metadata: [String: String] = [
+            "step": step.title,
+            "success": outcome.success ? "true" : "false",
+            "dryRun": dryRun ? "true" : "false",
+            "message": outcome.message
+        ]
+        if let recovery = outcome.recoverySuggestion, !recovery.isEmpty {
+            metadata["recovery"] = recovery
+        }
+        let decisions = selectedItems.map { $0.guardDecision.telemetryValue }
+        metadata["decisions"] = decisions.joined(separator: ",")
+        let sizeTotal = selectedItems.compactMap { $0.size }.reduce(Int64(0), +)
+        if sizeTotal > 0 {
+            metadata["sizeBytes"] = String(sizeTotal)
+            metadata["sizeReadable"] = formatByteCount(sizeTotal)
+        }
+        return metadata
+    }
 }
+

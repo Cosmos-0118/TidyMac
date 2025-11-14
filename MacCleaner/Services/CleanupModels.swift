@@ -47,8 +47,18 @@ struct CleanupCategory: Identifiable, Equatable {
         let size: Int64?
         let detail: String?
         var isSelected: Bool
+        var reasons: [CleanupReason]
+        let metadata: CleanupCandidate?
 
-        init(path: String, name: String, size: Int64?, detail: String?, isSelected: Bool = true) {
+        init(
+            path: String,
+            name: String,
+            size: Int64?,
+            detail: String?,
+            isSelected: Bool = true,
+            reasons: [CleanupReason] = [],
+            metadata: CleanupCandidate? = nil
+        ) {
             let normalizedPath = URL(fileURLWithPath: path).path
             self.id = normalizedPath
             self.name = name
@@ -56,6 +66,12 @@ struct CleanupCategory: Identifiable, Equatable {
             self.size = size
             self.detail = detail
             self.isSelected = isSelected
+            self.reasons = reasons
+            self.metadata = metadata
+        }
+
+        var guardDecision: DeletionGuard.Decision {
+            DeletionGuard.shared.decision(for: path)
         }
     }
 
@@ -96,6 +112,18 @@ struct CleanupCategory: Identifiable, Equatable {
 
     var hasSelection: Bool {
         isEnabled && selectedCount > 0
+    }
+}
+
+struct CleanupReason: Identifiable, Equatable {
+    let id: String
+    let label: String
+    let detail: String?
+
+    init(code: String, label: String, detail: String? = nil) {
+        id = code
+        self.label = label
+        self.detail = detail
     }
 }
 

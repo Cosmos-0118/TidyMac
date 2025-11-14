@@ -110,3 +110,27 @@ final class DeletionGuard {
 }
 
 extension DeletionGuard: DeletionGuarding {}
+
+extension DeletionGuard.Decision {
+    var displayName: String {
+        switch self {
+        case .allow:
+            return "Allowed"
+        case .excluded:
+            return "Excluded"
+        case .restricted:
+            return "Restricted"
+        }
+    }
+
+    var telemetryValue: String {
+        switch self {
+        case .allow:
+            return "allow"
+        case .excluded:
+            return "excluded"
+        case .restricted:
+            return "restricted"
+        }
+    }
+}

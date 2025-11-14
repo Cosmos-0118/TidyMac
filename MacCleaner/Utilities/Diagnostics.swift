@@ -62,7 +62,8 @@ final class DiagnosticsCenter: ObservableObject {
 
     private init() {}
 
-    func record(category: DiagnosticsCategory, severity: DiagnosticsSeverity, message: String, suggestion: String? = nil, metadata: [String: String] = [:]) {
+    @discardableResult
+    func record(category: DiagnosticsCategory, severity: DiagnosticsSeverity, message: String, suggestion: String? = nil, metadata: [String: String] = [:]) -> DiagnosticsEntry {
         let entry = DiagnosticsEntry(
             timestamp: Date(),
             category: category,
@@ -76,6 +77,8 @@ final class DiagnosticsCenter: ObservableObject {
         if entries.count > maxEntries {
             entries.removeFirst(entries.count - maxEntries)
         }
+
+        return entry
     }
 
     func clear() {
@@ -131,8 +134,112 @@ enum Diagnostics {
             logger.error("\(message, privacy: .public) \(serialized, privacy: .public)")
         }
 
-        Task { @MainActor in
-            DiagnosticsCenter.shared.record(category: category, severity: severity, message: message, suggestion: suggestion, metadata: metadata)
+        Task {
+            let entry = await MainActor.run {
+                DiagnosticsCenter.shared.record(
+                    category: category,
+                    severity: severity,
+                    message: message,
+                    suggestion: suggestion,
+                    metadata: metadata
+                )
+            }
+            DiagnosticsPersistence.shared.persist(entry: entry)
+        }
+    }
+}
+
+private final class DiagnosticsPersistence {
+    static let shared = DiagnosticsPersistence()
+
+    private let queue = DispatchQueue(label: "com.maccleaner.diagnostics.persistence", qos: .utility)
+    private let fileManager: FileManager
+    private let logURL: URL
+    private let maxFileSize: Int64 = 512 * 1024 // 512 KB rolling log
+
+    private init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+        let diagnosticsDirectory = fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("TidyMac", isDirectory: true)
+            .appendingPathComponent("Diagnostics", isDirectory: true)
+        logURL = diagnosticsDirectory.appendingPathComponent("cleanup-diagnostics.jsonl", isDirectory: false)
+    }
+
+    func persist(entry: DiagnosticsEntry) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.ensureLogDirectory()
+                let data = try self.encode(entry: entry)
+                try self.rotateIfNeeded(adding: Int64(data.count))
+                try self.append(data: data)
+            } catch {
+                // Persisting diagnostics should not interrupt the user; log to OS for investigation.
+                os_log("Diagnostics persistence failure: %{public}@", type: .error, String(describing: error))
+            }
+        }
+    }
+
+    private func ensureLogDirectory() throws {
+        let directory = logURL.deletingLastPathComponent()
+        if !fileManager.fileExists(atPath: directory.path) {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+    }
+
+    private func encode(entry: DiagnosticsEntry) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let payload = SerializableEntry(from: entry)
+        var data = try encoder.encode(payload)
+        data.append(0x0A) // newline for JSONL format
+        return data
+    }
+
+    private func rotateIfNeeded(adding bytes: Int64) throws {
+        guard fileManager.fileExists(atPath: logURL.path) else { return }
+        let attributes = try fileManager.attributesOfItem(atPath: logURL.path)
+        if let fileSize = attributes[.size] as? NSNumber {
+            let totalSize = fileSize.int64Value + bytes
+            if totalSize > maxFileSize {
+                var timestamp = ISO8601DateFormatter().string(from: Date())
+                timestamp = timestamp.replacingOccurrences(of: ":", with: "-")
+                timestamp = timestamp.replacingOccurrences(of: ".", with: "-")
+                let archiveURL = logURL.deletingLastPathComponent().appendingPathComponent("cleanup-diagnostics-\(timestamp).jsonl")
+                try? fileManager.removeItem(at: archiveURL)
+                try fileManager.moveItem(at: logURL, to: archiveURL)
+            }
+        }
+    }
+
+    private func append(data: Data) throws {
+        if fileManager.fileExists(atPath: logURL.path) {
+            let handle = try FileHandle(forWritingTo: logURL)
+            try handle.seekToEnd()
+            handle.write(data)
+            try handle.close()
+        } else {
+            try data.write(to: logURL, options: .atomic)
+        }
+    }
+
+    private struct SerializableEntry: Codable {
+        let timestamp: Date
+        let category: String
+        let severity: String
+        let message: String
+        let suggestion: String?
+        let metadata: [String: String]
+
+        init(from entry: DiagnosticsEntry) {
+            timestamp = entry.timestamp
+            category = entry.category.rawValue
+            severity = entry.severity.label
+            message = entry.message
+            suggestion = entry.suggestion
+            metadata = entry.metadata
         }
     }
 }

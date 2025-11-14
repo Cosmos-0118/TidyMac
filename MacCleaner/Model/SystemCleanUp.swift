@@ -13,7 +13,8 @@ func performSystemCleanup() -> Bool {
             let files = try FileManager.default.contentsOfDirectory(atPath: dir)
             for file in files {
                 let filePath = (dir as NSString).appendingPathComponent(file)
-                try FileManager.default.removeItem(atPath: filePath)
+                var resultingURL: NSURL?
+                try FileManager.default.trashItem(at: URL(fileURLWithPath: filePath), resultingItemURL: &resultingURL)
             }
         }
         return true
