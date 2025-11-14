@@ -47,8 +47,8 @@ final class SystemCacheCleanupServiceTests: XCTestCase {
             progressUpdate: { _ in }
         )
 
-        XCTAssertTrue(outcome.success)
-        XCTAssertTrue(outcome.message.contains("Dry run: 2 cache items selected"))
+    XCTAssertTrue(outcome.success)
+    XCTAssertTrue(outcome.message.contains("Dry run: 2 cleanup item"))
     }
 
     func testExecuteHandlesRestrictedPaths() async throws {
@@ -95,8 +95,8 @@ final class SystemCacheCleanupServiceTests: XCTestCase {
             progressUpdate: { _ in }
         )
 
-        XCTAssertTrue(outcome.success)
-        XCTAssertTrue(outcome.message.contains("Removed 2 cache items"))
+    XCTAssertTrue(outcome.success)
+    XCTAssertTrue(outcome.message.contains("Removed 2 cleanup item"))
         XCTAssertTrue(privilegedHandler.requestedPaths.isEmpty)
         for url in fileURLs {
             XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))

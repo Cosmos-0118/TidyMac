@@ -11,6 +11,10 @@ struct Uninstaller: View {
     private let autoFetch: Bool
     @StateObject private var viewModel: UninstallerViewModel
     @State private var uninstallConfirmation = false
+    @State private var pendingUninstallApp: Application?
+    @State private var reviewApplication: Application?
+    @State private var reviewItems: [ApplicationRelatedItem] = []
+    @State private var reviewIsLoading = false
 
     init(autoFetch: Bool = true, viewModel: UninstallerViewModel? = nil) {
         self.autoFetch = autoFetch
@@ -50,16 +54,33 @@ struct Uninstaller: View {
             viewModel.ensureSelectionConsistency()
         }
         .confirmationDialog(
-            "Uninstall \(viewModel.selectedApplication?.name ?? "application")?",
-            isPresented: $uninstallConfirmation,
+            "Uninstall \(pendingUninstallApp?.name ?? "application")?",
+            isPresented: Binding(
+                get: { uninstallConfirmation },
+                set: { newValue in
+                    uninstallConfirmation = newValue
+                    if !newValue {
+                        pendingUninstallApp = nil
+                    }
+                }
+            ),
             titleVisibility: .visible
         ) {
             Button("Uninstall", role: .destructive) {
-                if let app = viewModel.selectedApplication {
-                    Task { await viewModel.uninstall(app) }
-                }
+                guard let target = pendingUninstallApp else { return }
+                pendingUninstallApp = nil
+                uninstallConfirmation = false
+                Task { await viewModel.uninstall(target) }
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {
+                pendingUninstallApp = nil
+            }
+        }
+        .sheet(item: $reviewApplication, onDismiss: {
+            reviewItems = []
+            reviewIsLoading = false
+        }) { app in
+            uninstallReviewSheet(for: app)
         }
     }
 
@@ -212,7 +233,7 @@ struct Uninstaller: View {
 
                     HStack(spacing: DesignSystem.Spacing.medium) {
                         Button {
-                            uninstallConfirmation = true
+                            handleUninstallTap(for: app)
                         } label: {
                             Label(app.requiresRoot ? "Request Uninstall" : "Uninstall", systemImage: "trash")
                         }
@@ -377,6 +398,133 @@ struct Uninstaller: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private func handleUninstallTap(for app: Application) {
+        if app.requiresRoot {
+            showUninstallReview(for: app)
+        } else {
+            requestStandardUninstall(for: app)
+        }
+    }
+
+    private func requestStandardUninstall(for app: Application) {
+        pendingUninstallApp = app
+        uninstallConfirmation = true
+    }
+
+    private func showUninstallReview(for app: Application) {
+        reviewApplication = app
+        reviewItems = []
+        reviewIsLoading = true
+
+        Task {
+            let items = await viewModel.relatedItems(for: app)
+            await MainActor.run {
+                guard reviewApplication?.id == app.id else { return }
+                reviewItems = items
+                reviewIsLoading = false
+            }
+        }
+    }
+
+    private func clearReviewState() {
+        reviewApplication = nil
+    }
+
+    @ViewBuilder
+    private func uninstallReviewSheet(for app: Application) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+                Text("Review Related Files")
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(palette.primaryText)
+
+                Text("MacCleaner found these items linked to \(app.name). Review them before continuing the uninstall request.")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(palette.secondaryText)
+            }
+
+            if reviewIsLoading {
+                HStack(spacing: DesignSystem.Spacing.medium) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(palette.accentGreen)
+                    Text("Scanning related data…")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(palette.secondaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if reviewItems.isEmpty {
+                Text("No supporting files were detected. Only the application bundle will be removed.")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(palette.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                        ForEach(reviewItems) { item in
+                            relatedItemRow(for: item)
+                        }
+                    }
+                    .padding(.vertical, DesignSystem.Spacing.small)
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: 320)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: DesignSystem.Spacing.medium) {
+                Button("Cancel") {
+                    clearReviewState()
+                }
+                .buttonStyle(SecondaryButtonStyle())
+
+                Spacer()
+
+                Button {
+                    guard !reviewIsLoading else { return }
+                    let target = app
+                    clearReviewState()
+                    Task { await viewModel.uninstall(target) }
+                } label: {
+                    Label("Request Uninstall", systemImage: "trash.circle")
+                }
+                .buttonStyle(DestructiveButtonStyle())
+                .disabled(reviewIsLoading)
+            }
+        }
+        .padding(DesignSystem.Spacing.xLarge)
+        .frame(minWidth: 520, idealWidth: 560, maxWidth: 640, minHeight: 360)
+        .background(palette.surface.opacity(0.98))
+    }
+
+    private func relatedItemRow(for item: ApplicationRelatedItem) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+            HStack(spacing: DesignSystem.Spacing.small) {
+                Image(systemName: item.isDirectory ? "folder" : "doc.text")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(item.isDirectory ? palette.accentGreen : palette.accentGray)
+
+                Text(item.description)
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(palette.primaryText)
+            }
+
+            Text(item.path)
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundColor(palette.secondaryText)
+                .textSelection(.enabled)
+        }
+        .padding(DesignSystem.Spacing.medium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(palette.surface.opacity(0.9))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(palette.accentGray.opacity(0.2), lineWidth: 1)
+        )
     }
 
     private func revealInFinder(_ app: Application) {

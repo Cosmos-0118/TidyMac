@@ -89,6 +89,10 @@ final class UninstallerViewModel: ObservableObject {
         }
     }
 
+    func relatedItems(for app: Application) async -> [ApplicationRelatedItem] {
+        await service.relatedItems(for: app)
+    }
+
     func selectApplication(_ app: Application) {
         selectedApplication = app
     }

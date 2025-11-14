@@ -8,7 +8,7 @@ enum CleanupStep: Int, CaseIterable {
     var title: String {
         switch self {
         case .systemCaches:
-            return "System Caches"
+            return "Caches, Logs & Temp"
         case .largeFiles:
             return "Large & Old Files"
         case .xcodeArtifacts:
@@ -19,7 +19,7 @@ enum CleanupStep: Int, CaseIterable {
     var detail: String {
         switch self {
         case .systemCaches:
-            return "Clears temporary items under /var and system caches."
+            return "Scans app caches, log files, and safe temporary directories."
         case .largeFiles:
             return "Scans home folders for large, stale files."
         case .xcodeArtifacts:
@@ -104,6 +104,10 @@ enum CleanupStepState: Equatable {
     case running
     case success(message: String)
     case failure(message: String, recovery: String?)
+}
+
+extension CleanupStep: Identifiable {
+    var id: Int { rawValue }
 }
 
 struct CleanupRunSummary: Equatable {

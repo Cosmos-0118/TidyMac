@@ -5,6 +5,7 @@ struct SystemCleanup: View {
 
 	private let autoScan: Bool
 	@StateObject private var viewModel: SystemCleanupViewModel
+	@State private var presentedCategoryStep: CleanupStep?
 
 	init(
 		services: [AnyCleanupService] = CleanupServiceRegistry.default,
@@ -71,7 +72,8 @@ struct SystemCleanup: View {
 									category: category,
 									state: viewModel.stepStates[step],
 									progress: viewModel.stepProgress[step],
-									disabled: viewModel.isRunning || viewModel.isScanning
+									disabled: viewModel.isRunning || viewModel.isScanning,
+									onViewItems: { presentedCategoryStep = step }
 								)
 							}
 						}
@@ -84,6 +86,17 @@ struct SystemCleanup: View {
 		.dynamicTypeSize(.medium ... .accessibility3)
 		.onAppear {
 			viewModel.handleAppear(autoScan: autoScan)
+		}
+		.sheet(item: $presentedCategoryStep) { step in
+			if let categoryBinding = binding(for: step) {
+				CleanupCategoryItemsView(
+					category: categoryBinding,
+					disabled: viewModel.isRunning || viewModel.isScanning
+				)
+			} else {
+				Text("Category unavailable")
+					.padding()
+			}
 		}
 	}
 
@@ -249,6 +262,11 @@ struct SystemCleanup: View {
 		}
 		return "\(totalItems) \(itemLabel) selected."
 	}
+
+	private func binding(for step: CleanupStep) -> Binding<CleanupCategory>? {
+		guard let index = viewModel.categories.firstIndex(where: { $0.step == step }) else { return nil }
+		return $viewModel.categories[index]
+	}
 }
 
 private struct CleanupCategoryCard: View {
@@ -258,17 +276,20 @@ private struct CleanupCategoryCard: View {
 	let state: CleanupStepState?
 	let progress: Double?
 	let disabled: Bool
+	let onViewItems: () -> Void
 
 	init(
 		category: Binding<CleanupCategory>,
 		state: CleanupStepState?,
 		progress: Double?,
-		disabled: Bool
+		disabled: Bool,
+		onViewItems: @escaping () -> Void
 	) {
 		_category = category
 		self.state = state
 		self.progress = progress
 		self.disabled = disabled
+		self.onViewItems = onViewItems
 	}
 
 	var body: some View {
@@ -363,15 +384,32 @@ private struct CleanupCategoryCard: View {
 		} else {
 			Divider()
 
-			VStack(spacing: DesignSystem.Spacing.small) {
-				ForEach($category.items) { item in
-					CleanupItemRow(
-						item: item,
-						isEnabled: category.isEnabled && !disabled
-					)
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+				Text(categorySummary)
+					.font(DesignSystem.Typography.caption)
+					.foregroundColor(palette.secondaryText)
+
+				Button {
+					onViewItems()
+				} label: {
+					Label("Review Items", systemImage: "list.bullet")
+						.font(DesignSystem.Typography.caption)
 				}
+				.buttonStyle(SecondaryButtonStyle())
+				.disabled(disabled)
 			}
 		}
+	}
+
+	private var categorySummary: String {
+		let selected = category.selectedCount
+		let total = category.totalCount
+		guard total > 0 else { return "No items detected." }
+		let base = "\(selected) of \(total) selected"
+		if let size = category.selectedSize ?? category.totalSize {
+			return "\(base) • ~\(formatBytes(size))"
+		}
+		return base
 	}
 
 	@ViewBuilder
@@ -482,6 +520,93 @@ private struct CleanupItemRow: View {
 		}
 		.toggleStyle(.checkbox)
 		.disabled(!isEnabled)
+	}
+}
+
+private struct CleanupCategoryItemsView: View {
+	@Environment(\.designSystemPalette) private var palette
+	@Environment(\.dismiss) private var dismiss
+
+	@Binding var category: CleanupCategory
+	let disabled: Bool
+
+	var body: some View {
+		navigationContainer
+			.frame(minWidth: 480, minHeight: 520)
+	}
+
+	@ViewBuilder
+	private var content: some View {
+		List {
+			Section(header: Text(summaryHeader)) {
+				if category.items.isEmpty {
+					Text("No files discovered for this category.")
+						.font(DesignSystem.Typography.caption)
+						.foregroundColor(palette.secondaryText)
+				} else {
+					ForEach($category.items) { item in
+						CleanupItemRow(
+							item: item,
+							isEnabled: category.isEnabled && !disabled
+						)
+					}
+				}
+			}
+
+			if let note = category.note, !note.isEmpty {
+				Section("Notes") {
+					Text(note)
+						.font(DesignSystem.Typography.caption)
+						.foregroundColor(palette.secondaryText)
+				}
+			}
+
+			if let error = category.error, !error.isEmpty {
+				Section("Warnings") {
+					Text(error)
+						.font(DesignSystem.Typography.caption)
+						.foregroundColor(palette.accentRed)
+				}
+			}
+		}
+		#if os(macOS)
+			.listStyle(.inset)
+		#else
+			.listStyle(.insetGrouped)
+		#endif
+		.navigationTitle(category.step.title)
+	}
+
+	@ViewBuilder
+	private var navigationContainer: some View {
+		if #available(macOS 13, *) {
+			NavigationStack {
+				content
+			}
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button("Done") { dismiss() }
+				}
+			}
+		} else {
+			NavigationView {
+				content
+			}
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button("Done") { dismiss() }
+				}
+			}
+		}
+	}
+
+	private var summaryHeader: String {
+		guard !category.items.isEmpty else { return "Summary" }
+		let base = "\(category.selectedCount) of \(category.totalCount) selected"
+		if let size = category.selectedSize ?? category.totalSize {
+			return "\(base) • ~\(formatBytes(size))"
+		}
+		return base
 	}
 }
 
