@@ -1,4 +1,4 @@
-# MacCleaner Tech Stack
+# TidyMac Tech Stack
 
 ## Product Goals
 
@@ -8,9 +8,9 @@
 
 ## Current Implementation Snapshot
 
-- SwiftUI app entry point in `MacCleaner/MacCleanerApp.swift` with navigation defined in `Views/ContentView/ContentView.swift`.
+- SwiftUI app entry point in `TidyMac/TidyMacApp.swift` with navigation defined in `Views/ContentView/ContentView.swift`.
 - Feature views (Dashboard, System Cleanup, Large Files Finder, Uninstaller, Developer Tools) implemented as SwiftUI views with synchronous model calls.
-- Model layer under `MacCleaner/Model` uses Foundation APIs (`FileManager`, `ByteCountFormatter`) and low-level Mach calls for CPU, memory, and disk statistics.
+- Model layer under `TidyMac/Model` uses Foundation APIs (`FileManager`, `ByteCountFormatter`) and low-level Mach calls for CPU, memory, and disk statistics.
 - No dedicated service layer, dependency injection, or asynchronous error handling around privileged file operations.
 
 ## Proposed Layered Stack
@@ -89,7 +89,7 @@
 3. **Introduce View Models**: Create view models per feature with dependency injection for services and analytics.
 4. **Add Observability**: Instrument with `os.Logger`, wire in error reporting UI, and set up xcpretty + fastlane for CI logs.
 5. **Harden Privileged Actions**: Implement authorization prompts, sandbox exceptions, and user confirmation flows for deletions.
-6. **Expand Test Coverage**: Populate `MacCleanerTests` and `MacCleanerUITests` with scenarios covering cleanup success/failure paths.
+6. **Expand Test Coverage**: Populate `TidyMacTests` and `TidyMacUITests` with scenarios covering cleanup success/failure paths.
 
 ## Reference Apple Frameworks & Docs
 

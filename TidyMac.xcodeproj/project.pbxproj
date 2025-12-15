@@ -1,0 +1,806 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		79D4657D2C081E050061176E /* TidyMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4657C2C081E050061176E /* TidyMacApp.swift */; };
+		79D4657F2C081E050061176E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4657E2C081E050061176E /* ContentView.swift */; };
+		79D465812C081E060061176E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 79D465802C081E060061176E /* Assets.xcassets */; };
+		79D465842C081E060061176E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 79D465832C081E060061176E /* Preview Assets.xcassets */; };
+		79D4658F2C081E070061176E /* TidyMacTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4658E2C081E070061176E /* TidyMacTests.swift */; };
+		79D465992C081E070061176E /* TidyMacUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465982C081E070061176E /* TidyMacUITests.swift */; };
+		79D4659B2C081E070061176E /* TidyMacUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4659A2C081E070061176E /* TidyMacUITestsLaunchTests.swift */; };
+		79D465A92C081E4E0061176E /* SystemCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465A82C081E4E0061176E /* SystemCleanup.swift */; };
+		79D465AC2C081E760061176E /* LargeFilesFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465AB2C081E760061176E /* LargeFilesFinder.swift */; };
+		79D465AE2C081E900061176E /* Uninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465AD2C081E900061176E /* Uninstaller.swift */; };
+		79D465B02C081E9F0061176E /* DeveloperTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465AF2C081E9F0061176E /* DeveloperTools.swift */; };
+		79D465B32C081F320061176E /* StorageInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465B22C081F320061176E /* StorageInfo.swift */; };
+		79D465B52C081F560061176E /* Dashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465B42C081F560061176E /* Dashboard.swift */; };
+		79D465B72C0821510061176E /* SystemCleanUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465B62C0821510061176E /* SystemCleanUp.swift */; };
+		79D465B92C0822F40061176E /* FileInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465B82C0822F40061176E /* FileInfo.swift */; };
+		79D465BB2C0826820061176E /* SystemMonitorHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465BA2C0826820061176E /* SystemMonitorHelper.swift */; };
+		79D465CD2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465CC2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift */; };
+		79D465C42C0A036A0061176E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465C32C0A036A0061176E /* DesignSystem.swift */; };
+		79D465C62C0A18C40061176E /* StatusComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465C52C0A18C40061176E /* StatusComponents.swift */; };
+		79D465D62C0A50000061176E /* CleanupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D02C0A50000061176E /* CleanupModels.swift */; };
+		79D465D72C0A50010061176E /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D12C0A50010061176E /* CleanupService.swift */; };
+		79D465D82C0A50020061176E /* CleanupProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D22C0A50020061176E /* CleanupProgress.swift */; };
+		79D465D92C0A50030061176E /* CleanupServiceRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D32C0A50030061176E /* CleanupServiceRegistry.swift */; };
+		79D465DA2C0A50040061176E /* SystemCleanupServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D42C0A50040061176E /* SystemCleanupServices.swift */; };
+		79D465DB2C0A50050061176E /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D465D52C0A50050061176E /* DashboardViewModel.swift */; };
+		79D466012C0B0A000061176E /* FileSystemErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466002C0B0A000061176E /* FileSystemErrors.swift */; };
+		79D466032C0B0A000061176E /* SystemCleanupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466022C0B0A000061176E /* SystemCleanupViewModel.swift */; };
+		79D466052C0B0A000061176E /* LargeFileScanningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466042C0B0A000061176E /* LargeFileScanningService.swift */; };
+		79D466072C0B0A000061176E /* LargeFilesFinderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466062C0B0A000061176E /* LargeFilesFinderViewModel.swift */; };
+		79D466092C0B0A000061176E /* ApplicationInventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466082C0B0A000061176E /* ApplicationInventoryService.swift */; };
+		79D4660B2C0B0A000061176E /* UninstallerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4660A2C0B0A000061176E /* UninstallerViewModel.swift */; };
+		79D4660D2C0B0A000061176E /* Application.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4660C2C0B0A000061176E /* Application.swift */; };
+		79D4660F2C0B0A000061176E /* DeveloperOperationsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4660E2C0B0A000061176E /* DeveloperOperationsService.swift */; };
+		79D466112C0B0A000061176E /* DeveloperToolsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466102C0B0A000061176E /* DeveloperToolsViewModel.swift */; };
+		79D466132C0B0A000061176E /* DeveloperOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D466122C0B0A000061176E /* DeveloperOperations.swift */; };
+		79D4661E2C0B0A000061176E /* AppSupportStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4661A2C0B0A000061176E /* AppSupportStorage.swift */; };
+		79D4661F2C0B0A000061176E /* DeletionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4661B2C0B0A000061176E /* DeletionPreferences.swift */; };
+		79D466202C0B0A000061176E /* DeletionPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4661C2C0B0A000061176E /* DeletionPreferencesStore.swift */; };
+		79D466212C0B0A000061176E /* DeletionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4661D2C0B0A000061176E /* DeletionGuard.swift */; };
+		79D4A2012D0C01000061176E /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2002D0C01000061176E /* Diagnostics.swift */; };
+		79D4A2032D0C01000061176E /* DiagnosticsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2022D0C01000061176E /* DiagnosticsPanel.swift */; };
+		79D4A2112D0C01000061176E /* LargeFileScanningServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */; };
+		79D4A2132D0C01000061176E /* ApplicationInventoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */; };
+		79D4B2A22D0C05000061176E /* CleanupServiceHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */; };
+		79D4B2A42D0C05000061176E /* SystemCacheCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */; };
+		79D4C6002F0D14000061176E /* CleanupInventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */; };
+		79D4C6A72F0D1C000061176E /* CleanupConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */; };
+		79D4C6022F0D14000061176E /* CleanupInventoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		79D4658B2C081E070061176E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 79D465712C081E050061176E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 79D465782C081E050061176E;
+			remoteInfo = TidyMac;
+		};
+		79D465952C081E070061176E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 79D465712C081E050061176E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 79D465782C081E050061176E;
+			remoteInfo = TidyMac;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		79D465792C081E050061176E /* TidyMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TidyMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		79D4657C2C081E050061176E /* TidyMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidyMacApp.swift; sourceTree = "<group>"; };
+		79D4657E2C081E050061176E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		79D465802C081E060061176E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		79D465832C081E060061176E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		79D465852C081E060061176E /* TidyMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TidyMac.entitlements; sourceTree = "<group>"; };
+		79D4658A2C081E070061176E /* TidyMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TidyMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		79D4658E2C081E070061176E /* TidyMacTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidyMacTests.swift; sourceTree = "<group>"; };
+		79D465942C081E070061176E /* TidyMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TidyMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		79D465982C081E070061176E /* TidyMacUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidyMacUITests.swift; sourceTree = "<group>"; };
+		79D4659A2C081E070061176E /* TidyMacUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidyMacUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		79D465A82C081E4E0061176E /* SystemCleanup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCleanup.swift; sourceTree = "<group>"; };
+		79D465AB2C081E760061176E /* LargeFilesFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesFinder.swift; sourceTree = "<group>"; };
+		79D465AD2C081E900061176E /* Uninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Uninstaller.swift; sourceTree = "<group>"; };
+		79D465AF2C081E9F0061176E /* DeveloperTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperTools.swift; sourceTree = "<group>"; };
+		79D465B22C081F320061176E /* StorageInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageInfo.swift; sourceTree = "<group>"; };
+		79D465B42C081F560061176E /* Dashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dashboard.swift; sourceTree = "<group>"; };
+		79D465B62C0821510061176E /* SystemCleanUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCleanUp.swift; sourceTree = "<group>"; };
+		79D465B82C0822F40061176E /* FileInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileInfo.swift; sourceTree = "<group>"; };
+		79D465BA2C0826820061176E /* SystemMonitorHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorHelper.swift; sourceTree = "<group>"; };
+		79D465CC2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedDeletionHelper.swift; sourceTree = "<group>"; };
+		79D465C32C0A036A0061176E /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		79D465C52C0A18C40061176E /* StatusComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusComponents.swift; sourceTree = "<group>"; };
+		79D465D02C0A50000061176E /* CleanupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupModels.swift; sourceTree = "<group>"; };
+		79D465D12C0A50010061176E /* CleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupService.swift; sourceTree = "<group>"; };
+		79D465D22C0A50020061176E /* CleanupProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProgress.swift; sourceTree = "<group>"; };
+		79D465D32C0A50030061176E /* CleanupServiceRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceRegistry.swift; sourceTree = "<group>"; };
+		79D465D42C0A50040061176E /* SystemCleanupServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCleanupServices.swift; sourceTree = "<group>"; };
+		79D465D52C0A50050061176E /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		79D466002C0B0A000061176E /* FileSystemErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemErrors.swift; sourceTree = "<group>"; };
+		79D466022C0B0A000061176E /* SystemCleanupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCleanupViewModel.swift; sourceTree = "<group>"; };
+		79D466042C0B0A000061176E /* LargeFileScanningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileScanningService.swift; sourceTree = "<group>"; };
+		79D466062C0B0A000061176E /* LargeFilesFinderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesFinderViewModel.swift; sourceTree = "<group>"; };
+		79D466082C0B0A000061176E /* ApplicationInventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationInventoryService.swift; sourceTree = "<group>"; };
+		79D4660A2C0B0A000061176E /* UninstallerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerViewModel.swift; sourceTree = "<group>"; };
+		79D4660C2C0B0A000061176E /* Application.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
+		79D4660E2C0B0A000061176E /* DeveloperOperationsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperOperationsService.swift; sourceTree = "<group>"; };
+		79D466102C0B0A000061176E /* DeveloperToolsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperToolsViewModel.swift; sourceTree = "<group>"; };
+		79D466122C0B0A000061176E /* DeveloperOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperOperations.swift; sourceTree = "<group>"; };
+		79D4661A2C0B0A000061176E /* AppSupportStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSupportStorage.swift; sourceTree = "<group>"; };
+		79D4661B2C0B0A000061176E /* DeletionPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionPreferences.swift; sourceTree = "<group>"; };
+		79D4661C2C0B0A000061176E /* DeletionPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionPreferencesStore.swift; sourceTree = "<group>"; };
+		79D4661D2C0B0A000061176E /* DeletionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionGuard.swift; sourceTree = "<group>"; };
+		79D4A2002D0C01000061176E /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
+		79D4A2022D0C01000061176E /* DiagnosticsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DiagnosticsPanel.swift; path = TidyMac/Views/Common/DiagnosticsPanel.swift; sourceTree = SOURCE_ROOT; };
+		79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileScanningServiceTests.swift; sourceTree = "<group>"; };
+		79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationInventoryServiceTests.swift; sourceTree = "<group>"; };
+		79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceHelpers.swift; sourceTree = "<group>"; };
+		79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCacheCleanupService.swift; sourceTree = "<group>"; };
+		79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupConfidence.swift; sourceTree = "<group>"; };
+		79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryService.swift; sourceTree = "<group>"; };
+		79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupInventoryServiceTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		79D465762C081E050061176E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465872C081E070061176E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465912C081E070061176E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		79D465702C081E050061176E = {
+			isa = PBXGroup;
+			children = (
+				79D4657B2C081E050061176E /* TidyMac */,
+				79D4658D2C081E070061176E /* TidyMacTests */,
+				79D465972C081E070061176E /* TidyMacUITests */,
+				79D4657A2C081E050061176E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		79D4657A2C081E050061176E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				79D465792C081E050061176E /* TidyMac.app */,
+				79D4658A2C081E070061176E /* TidyMacTests.xctest */,
+				79D465942C081E070061176E /* TidyMacUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		79D4657B2C081E050061176E /* TidyMac */ = {
+			isa = PBXGroup;
+			children = (
+				79D465B12C081F230061176E /* Model */,
+				79D465DC2C0A51000061176E /* Services */,
+				79D465DD2C0A51000061176E /* ViewModels */,
+				79D466142C0B0A000061176E /* Utilities */,
+				79D465A72C081E3C0061176E /* Views */,
+				79D4657C2C081E050061176E /* TidyMacApp.swift */,
+				79D465802C081E060061176E /* Assets.xcassets */,
+				79D465852C081E060061176E /* TidyMac.entitlements */,
+				79D465822C081E060061176E /* Preview Content */,
+			);
+			path = TidyMac;
+			sourceTree = "<group>";
+		};
+		79D465822C081E060061176E /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				79D465832C081E060061176E /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		79D4658D2C081E070061176E /* TidyMacTests */ = {
+			isa = PBXGroup;
+			children = (
+				79D4658E2C081E070061176E /* TidyMacTests.swift */,
+				79D4A2102D0C01000061176E /* LargeFileScanningServiceTests.swift */,
+				79D4A2122D0C01000061176E /* ApplicationInventoryServiceTests.swift */,
+				79D4C6012F0D14000061176E /* CleanupInventoryServiceTests.swift */,
+			);
+			path = TidyMacTests;
+			sourceTree = "<group>";
+		};
+		79D465972C081E070061176E /* TidyMacUITests */ = {
+			isa = PBXGroup;
+			children = (
+				79D465982C081E070061176E /* TidyMacUITests.swift */,
+				79D4659A2C081E070061176E /* TidyMacUITestsLaunchTests.swift */,
+			);
+			path = TidyMacUITests;
+			sourceTree = "<group>";
+		};
+		79D465A72C081E3C0061176E /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				79D465AA2C081E670061176E /* ContentView */,
+				79D465C22C0A02F10061176E /* Common */,
+				79D465A82C081E4E0061176E /* SystemCleanup.swift */,
+				79D465AB2C081E760061176E /* LargeFilesFinder.swift */,
+				79D465AD2C081E900061176E /* Uninstaller.swift */,
+				79D465AF2C081E9F0061176E /* DeveloperTools.swift */,
+				79D465B42C081F560061176E /* Dashboard.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		79D465C22C0A02F10061176E /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				79D465C72C0A18F70061176E /* Components */,
+				79D465C32C0A036A0061176E /* DesignSystem.swift */,
+				79D4A2022D0C01000061176E /* DiagnosticsPanel.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		79D465C72C0A18F70061176E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				79D465C52C0A18C40061176E /* StatusComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		79D465AA2C081E670061176E /* ContentView */ = {
+			isa = PBXGroup;
+			children = (
+				79D4657E2C081E050061176E /* ContentView.swift */,
+			);
+			path = ContentView;
+			sourceTree = "<group>";
+		};
+		79D465B12C081F230061176E /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				79D465B22C081F320061176E /* StorageInfo.swift */,
+				79D465B62C0821510061176E /* SystemCleanUp.swift */,
+				79D465B82C0822F40061176E /* FileInfo.swift */,
+				79D465BA2C0826820061176E /* SystemMonitorHelper.swift */,
+				79D465CC2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift */,
+				79D4C6A62F0D1C000061176E /* CleanupConfidence.swift */,
+				79D4661B2C0B0A000061176E /* DeletionPreferences.swift */,
+				79D4660C2C0B0A000061176E /* Application.swift */,
+				79D466122C0B0A000061176E /* DeveloperOperations.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		79D465DC2C0A51000061176E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				79D465D12C0A50010061176E /* CleanupService.swift */,
+				79D465D02C0A50000061176E /* CleanupModels.swift */,
+				79D465D22C0A50020061176E /* CleanupProgress.swift */,
+				79D465D32C0A50030061176E /* CleanupServiceRegistry.swift */,
+				79D465D42C0A50040061176E /* SystemCleanupServices.swift */,
+				79D4B2A32D0C05000061176E /* SystemCacheCleanupService.swift */,
+				79D4C5FF2F0D14000061176E /* CleanupInventoryService.swift */,
+				79D4B2A12D0C05000061176E /* CleanupServiceHelpers.swift */,
+				79D466042C0B0A000061176E /* LargeFileScanningService.swift */,
+				79D466082C0B0A000061176E /* ApplicationInventoryService.swift */,
+				79D4660E2C0B0A000061176E /* DeveloperOperationsService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		79D465DD2C0A51000061176E /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				79D465D52C0A50050061176E /* DashboardViewModel.swift */,
+				79D466022C0B0A000061176E /* SystemCleanupViewModel.swift */,
+				79D466062C0B0A000061176E /* LargeFilesFinderViewModel.swift */,
+				79D4660A2C0B0A000061176E /* UninstallerViewModel.swift */,
+				79D466102C0B0A000061176E /* DeveloperToolsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		79D466142C0B0A000061176E /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				79D4661A2C0B0A000061176E /* AppSupportStorage.swift */,
+				79D4661C2C0B0A000061176E /* DeletionPreferencesStore.swift */,
+				79D4661D2C0B0A000061176E /* DeletionGuard.swift */,
+				79D466002C0B0A000061176E /* FileSystemErrors.swift */,
+				79D4A2002D0C01000061176E /* Diagnostics.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		79D465782C081E050061176E /* TidyMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79D4659E2C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMac" */;
+			buildPhases = (
+				79D465752C081E050061176E /* Sources */,
+				79D465762C081E050061176E /* Frameworks */,
+				79D465772C081E050061176E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TidyMac;
+			productName = TidyMac;
+			productReference = 79D465792C081E050061176E /* TidyMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		79D465892C081E070061176E /* TidyMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79D465A12C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMacTests" */;
+			buildPhases = (
+				79D465862C081E070061176E /* Sources */,
+				79D465872C081E070061176E /* Frameworks */,
+				79D465882C081E070061176E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				79D4658C2C081E070061176E /* PBXTargetDependency */,
+			);
+			name = TidyMacTests;
+			productName = TidyMacTests;
+			productReference = 79D4658A2C081E070061176E /* TidyMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		79D465932C081E070061176E /* TidyMacUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79D465A42C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMacUITests" */;
+			buildPhases = (
+				79D465902C081E070061176E /* Sources */,
+				79D465912C081E070061176E /* Frameworks */,
+				79D465922C081E070061176E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				79D465962C081E070061176E /* PBXTargetDependency */,
+			);
+			name = TidyMacUITests;
+			productName = TidyMacUITests;
+			productReference = 79D465942C081E070061176E /* TidyMacUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		79D465712C081E050061176E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					79D465782C081E050061176E = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					79D465892C081E070061176E = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 79D465782C081E050061176E;
+					};
+					79D465932C081E070061176E = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 79D465782C081E050061176E;
+					};
+				};
+			};
+			buildConfigurationList = 79D465742C081E050061176E /* Build configuration list for PBXProject "TidyMac" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 79D465702C081E050061176E;
+			productRefGroup = 79D4657A2C081E050061176E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				79D465782C081E050061176E /* TidyMac */,
+				79D465892C081E070061176E /* TidyMacTests */,
+				79D465932C081E070061176E /* TidyMacUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		79D465772C081E050061176E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79D465842C081E060061176E /* Preview Assets.xcassets in Resources */,
+				79D465812C081E060061176E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465882C081E070061176E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465922C081E070061176E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		79D465752C081E050061176E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79D465CD2C0A3ABC0061176E /* PrivilegedDeletionHelper.swift in Sources */,
+				79D465B72C0821510061176E /* SystemCleanUp.swift in Sources */,
+				79D4657F2C081E050061176E /* ContentView.swift in Sources */,
+				79D4A2032D0C01000061176E /* DiagnosticsPanel.swift in Sources */,
+				79D4A2012D0C01000061176E /* Diagnostics.swift in Sources */,
+				79D465B32C081F320061176E /* StorageInfo.swift in Sources */,
+				79D465B52C081F560061176E /* Dashboard.swift in Sources */,
+				79D4657D2C081E050061176E /* TidyMacApp.swift in Sources */,
+				79D465A92C081E4E0061176E /* SystemCleanup.swift in Sources */,
+				79D465B02C081E9F0061176E /* DeveloperTools.swift in Sources */,
+				79D465AE2C081E900061176E /* Uninstaller.swift in Sources */,
+				79D465C42C0A036A0061176E /* DesignSystem.swift in Sources */,
+				79D465C62C0A18C40061176E /* StatusComponents.swift in Sources */,
+				79D465AC2C081E760061176E /* LargeFilesFinder.swift in Sources */,
+				79D465B92C0822F40061176E /* FileInfo.swift in Sources */,
+				79D465BB2C0826820061176E /* SystemMonitorHelper.swift in Sources */,
+				79D4C6A72F0D1C000061176E /* CleanupConfidence.swift in Sources */,
+				79D465D62C0A50000061176E /* CleanupModels.swift in Sources */,
+				79D465D72C0A50010061176E /* CleanupService.swift in Sources */,
+				79D465D82C0A50020061176E /* CleanupProgress.swift in Sources */,
+				79D465D92C0A50030061176E /* CleanupServiceRegistry.swift in Sources */,
+				79D465DA2C0A50040061176E /* SystemCleanupServices.swift in Sources */,
+				79D4B2A42D0C05000061176E /* SystemCacheCleanupService.swift in Sources */,
+				79D4C6002F0D14000061176E /* CleanupInventoryService.swift in Sources */,
+				79D4B2A22D0C05000061176E /* CleanupServiceHelpers.swift in Sources */,
+				79D465DB2C0A50050061176E /* DashboardViewModel.swift in Sources */,
+				79D466012C0B0A000061176E /* FileSystemErrors.swift in Sources */,
+				79D4661E2C0B0A000061176E /* AppSupportStorage.swift in Sources */,
+				79D4661F2C0B0A000061176E /* DeletionPreferences.swift in Sources */,
+				79D466202C0B0A000061176E /* DeletionPreferencesStore.swift in Sources */,
+				79D466212C0B0A000061176E /* DeletionGuard.swift in Sources */,
+				79D466032C0B0A000061176E /* SystemCleanupViewModel.swift in Sources */,
+				79D466052C0B0A000061176E /* LargeFileScanningService.swift in Sources */,
+				79D466072C0B0A000061176E /* LargeFilesFinderViewModel.swift in Sources */,
+				79D466092C0B0A000061176E /* ApplicationInventoryService.swift in Sources */,
+				79D4660B2C0B0A000061176E /* UninstallerViewModel.swift in Sources */,
+				79D4660D2C0B0A000061176E /* Application.swift in Sources */,
+				79D4660F2C0B0A000061176E /* DeveloperOperationsService.swift in Sources */,
+				79D466112C0B0A000061176E /* DeveloperToolsViewModel.swift in Sources */,
+				79D466132C0B0A000061176E /* DeveloperOperations.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465862C081E070061176E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79D4658F2C081E070061176E /* TidyMacTests.swift in Sources */,
+				79D4A2112D0C01000061176E /* LargeFileScanningServiceTests.swift in Sources */,
+				79D4A2132D0C01000061176E /* ApplicationInventoryServiceTests.swift in Sources */,
+				79D4C6022F0D14000061176E /* CleanupInventoryServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79D465902C081E070061176E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79D465992C081E070061176E /* TidyMacUITests.swift in Sources */,
+				79D4659B2C081E070061176E /* TidyMacUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		79D4658C2C081E070061176E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 79D465782C081E050061176E /* TidyMac */;
+			targetProxy = 79D4658B2C081E070061176E /* PBXContainerItemProxy */;
+		};
+		79D465962C081E070061176E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 79D465782C081E050061176E /* TidyMac */;
+			targetProxy = 79D465952C081E070061176E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		79D4659C2C081E070061176E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		79D4659D2C081E070061176E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		79D4659F2C081E070061176E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TidyMac/TidyMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"TidyMac/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		79D465A02C081E070061176E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TidyMac/TidyMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"TidyMac/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		79D465A22C081E070061176E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TidyMac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TidyMac";
+			};
+			name = Debug;
+		};
+		79D465A32C081E070061176E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TidyMac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TidyMac";
+			};
+			name = Release;
+		};
+		79D465A52C081E070061176E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMacUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = TidyMac;
+			};
+			name = Debug;
+		};
+		79D465A62C081E070061176E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tidymac.TidyMacUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = TidyMac;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		79D465742C081E050061176E /* Build configuration list for PBXProject "TidyMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79D4659C2C081E070061176E /* Debug */,
+				79D4659D2C081E070061176E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		79D4659E2C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79D4659F2C081E070061176E /* Debug */,
+				79D465A02C081E070061176E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		79D465A12C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79D465A22C081E070061176E /* Debug */,
+				79D465A32C081E070061176E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		79D465A42C081E070061176E /* Build configuration list for PBXNativeTarget "TidyMacUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79D465A52C081E070061176E /* Debug */,
+				79D465A62C081E070061176E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 79D465712C081E050061176E /* Project object */;
+}

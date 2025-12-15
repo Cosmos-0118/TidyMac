@@ -1,4 +1,4 @@
-# MacCleaner
+# TidyMac
 
 A SwiftUI macOS app that monitors system health, finds reclaimable storage, and removes developer cruft with guardrails for safety.
 
@@ -20,18 +20,18 @@ A SwiftUI macOS app that monitors system health, finds reclaimable storage, and 
 ## Safety & Permissions
 
 - **DeletionGuard** prevents risky paths; privileged deletion paths are routed through `PrivilegedDeletionHelper` / `PrivilegedDeletionService`.
-- **Full Disk Access**: Some scans (large files, caches, uninstall) need it. Go to _System Settings → Privacy & Security → Full Disk Access_ and add MacCleaner.
+- **Full Disk Access**: Some scans (large files, caches, uninstall) need it. Go to _System Settings → Privacy & Security → Full Disk Access_ and add TidyMac.
 - **Dry-run style UX**: You review categories and selections before deleting; overlays keep destructive actions obvious.
 
 ## Requirements
 
 - macOS Sonoma or later (tested on Apple Silicon).
-- Xcode 15+ (Swift 5.10+). Uses the Xcode project `MacCleaner.xcodeproj`.
+- Xcode 15+ (Swift 5.10+). Uses the Xcode project `TidyMac.xcodeproj` with the **TidyMac** scheme.
 - Optional: `xcbeautify` for prettier build output when using the helper script.
 
 ## Quick Start
 
-1. Open `MacCleaner.xcodeproj` in Xcode and select the **MacCleaner** scheme.
+1. Open `TidyMac.xcodeproj` in Xcode and select the **TidyMac** scheme.
 2. Run the app (⌘R) or use the helper script:
 
    ```sh
@@ -42,24 +42,24 @@ A SwiftUI macOS app that monitors system health, finds reclaimable storage, and 
 
 ## Running Tests
 
-- Unit/UI tests are under `MacCleanerTests/` and `MacCleanerUITests/`.
+- Unit/UI tests are under `TidyMacTests/` and `TidyMacUITests/`.
 - From the command line:
 
   ```sh
   xcodebuild \
-    -scheme MacCleaner \
-    -project MacCleaner.xcodeproj \
+    -scheme TidyMac \
+    -project TidyMac.xcodeproj \
     -destination 'platform=macOS' \
     test
   ```
 
 ## Project Layout
 
-- `MacCleaner/Views/` – SwiftUI screens (`Dashboard`, `SystemCleanup`, `LargeFilesFinder`, `Uninstaller`, `DeveloperTools`, `ContentView`).
-- `MacCleaner/ViewModels/` – State holders for each feature area.
-- `MacCleaner/Services/` – Domain services (cleanup orchestration, inventory, large file scanning, developer ops).
-- `MacCleaner/Model/` – Core data models (apps, cleanup categories, storage info, deletion helpers).
-- `MacCleaner/Utilities/` – Shared helpers (diagnostics, design system palette, deletion guards).
+- `TidyMac/Views/` – SwiftUI screens (`Dashboard`, `SystemCleanup`, `LargeFilesFinder`, `Uninstaller`, `DeveloperTools`, `ContentView`).
+- `TidyMac/ViewModels/` – State holders for each feature area.
+- `TidyMac/Services/` – Domain services (cleanup orchestration, inventory, large file scanning, developer ops).
+- `TidyMac/Model/` – Core data models (apps, cleanup categories, storage info, deletion helpers).
+- `TidyMac/Utilities/` – Shared helpers (diagnostics, design system palette, deletion guards).
 - `scripts/` – Automation like `build_and_run.sh`.
 
 ## Key Services
@@ -79,4 +79,4 @@ A SwiftUI macOS app that monitors system health, finds reclaimable storage, and 
 
 - Keep destructive changes behind user confirmation and progress overlays.
 - Prefer async work off the main actor for scans; surface progress via view models.
-- Add tests in `MacCleanerTests` for new services and `MacCleanerUITests` for UI flows.
+- Add tests in `TidyMacTests` for new services and `TidyMacUITests` for UI flows.

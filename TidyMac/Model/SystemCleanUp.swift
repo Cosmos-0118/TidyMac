@@ -1,0 +1,25 @@
+//  Copyright © 2024 TidyMac, LLC. All rights reserved.
+
+import Foundation
+
+func performSystemCleanup() -> Bool {
+    let tempDirectories = [
+        NSTemporaryDirectory(),
+        "/var/folders",
+    ]
+
+    do {
+        for dir in tempDirectories {
+            let files = try FileManager.default.contentsOfDirectory(atPath: dir)
+            for file in files {
+                let filePath = (dir as NSString).appendingPathComponent(file)
+                var resultingURL: NSURL?
+                try FileManager.default.trashItem(at: URL(fileURLWithPath: filePath), resultingItemURL: &resultingURL)
+            }
+        }
+        return true
+    } catch {
+        print("Error during cleanup: \(error.localizedDescription)")
+        return false
+    }
+}

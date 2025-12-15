@@ -2,21 +2,21 @@
 set -euo pipefail
 setopt NULL_GLOB
 
-# Build + run helper for MacCleaner
+# Build + run helper for TidyMac
 # Usage: ./scripts/build_and_run.sh
 
 PROJECT_ROOT="${0:A:h:h}"
-SCHEME="MacCleaner"
-PROJECT_FILE="${PROJECT_ROOT}/MacCleaner.xcodeproj"
+SCHEME="TidyMac"
+PROJECT_FILE="${PROJECT_ROOT}/TidyMac.xcodeproj"
 DESTINATION="platform=macOS"
 DERIVED_BASE="${HOME}/Library/Developer/Xcode/DerivedData"
-APP_NAME="MacCleaner.app"
+APP_NAME="TidyMac.app"
 
 clean_old_builds() {
-  echo "🧹 Cleaning old MacCleaner builds..."
-  local matches=(${DERIVED_BASE}/MacCleaner-*)
+  echo "🧹 Cleaning old TidyMac builds..."
+  local matches=(${DERIVED_BASE}/TidyMac-*)
   if [[ ${#matches} -eq 0 ]]; then
-    echo "ℹ️  No prior MacCleaner DerivedData found."
+    echo "ℹ️  No prior TidyMac DerivedData found."
     return
   fi
 
@@ -47,7 +47,7 @@ build_app() {
 
 find_and_open_app() {
   local latest_dd
-  latest_dd=$(ls -dt ${DERIVED_BASE}/MacCleaner-* 2>/dev/null | head -1 || true)
+  latest_dd=$(ls -dt ${DERIVED_BASE}/TidyMac-* 2>/dev/null | head -1 || true)
   if [[ -z "${latest_dd}" ]]; then
     echo "❌ Could not locate DerivedData for ${SCHEME}."
     return 1

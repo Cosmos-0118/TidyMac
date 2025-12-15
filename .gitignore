@@ -9,6 +9,7 @@ xcuserdata/
 /build/
 DerivedData/
 *.build/
+TidyMac.dmg
 
 # Dependency directories
 Pods/
