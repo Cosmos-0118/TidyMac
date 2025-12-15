@@ -756,56 +756,230 @@ private struct CleanupItemRow: View {
 
 	var body: some View {
 		Toggle(isOn: $item.isSelected) {
-			VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
-				HStack(alignment: .firstTextBaseline, spacing: DesignSystem.Spacing.small) {
-					Text(item.name)
-						.font(DesignSystem.Typography.body)
-						.foregroundColor(palette.primaryText)
-						.lineLimit(1)
-
-					Spacer(minLength: DesignSystem.Spacing.medium)
-
-					if let size = item.size {
-						Text(formatBytes(size))
-							.font(DesignSystem.Typography.caption)
-							.foregroundColor(palette.secondaryText)
-							.fixedSize(horizontal: true, vertical: false)
-					}
-				}
-				.frame(maxWidth: .infinity, alignment: .leading)
-
-				Text(item.path)
-					.font(DesignSystem.Typography.caption)
-					.foregroundColor(palette.secondaryText)
-					.lineLimit(1)
-					.truncationMode(.middle)
-
-				if let detail = item.detail, !detail.isEmpty {
-					Text(detail)
-						.font(DesignSystem.Typography.caption)
-						.foregroundColor(palette.secondaryText)
-				}
-
-				if !item.reasons.isEmpty {
-					VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
-						ForEach(item.reasons) { reason in
-							Text("• \(reason.labelLine)")
-								.font(DesignSystem.Typography.caption)
-								.foregroundColor(palette.secondaryText)
-						}
-					}
-				}
-
-				let decision = item.guardDecision
-				let descriptor = guardDescriptor(for: decision)
-				Label(descriptor.title, systemImage: descriptor.icon)
-					.font(DesignSystem.Typography.caption)
-					.foregroundColor(descriptor.color(palette))
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+				headerRow
+				pathRow
+				detailRow
+				reasonChips
+				footerRow
 			}
-			.frame(maxWidth: .infinity, alignment: .leading)
+			.padding(DesignSystem.Spacing.medium)
+			.background(cardBackground)
+			.overlay(accentBar, alignment: .leading)
+			.overlay(sizeBadge, alignment: .topTrailing)
+			.overlay(
+				RoundedRectangle(cornerRadius: 14, style: .continuous)
+					.stroke(accentColor.opacity(item.isSelected ? 0.6 : 0.25), lineWidth: 1)
+			)
+			.clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+			.shadow(color: accentColor.opacity(0.08), radius: 10, x: 0, y: 4)
 		}
 		.toggleStyle(.checkbox)
 		.disabled(!isEnabled)
+	}
+
+	private var accentColor: Color {
+		guardDescriptor(for: item.guardDecision).color(palette)
+	}
+
+	private var riskColor: Color {
+		guard let confidence = item.confidence else { return palette.accentGreen }
+		switch confidence.tier {
+		case .auto:
+			return palette.accentGreen
+		case .review:
+			return Color.yellow.opacity(0.9)
+		case .observe:
+			return palette.accentGray
+		}
+	}
+
+	private var cardBackground: some View {
+		LinearGradient(
+			colors: [
+				palette.surface.opacity(item.isSelected ? 0.9 : 0.78),
+				palette.surface.opacity(item.isSelected ? 0.8 : 0.64)
+			],
+			startPoint: .topLeading,
+			endPoint: .bottomTrailing
+		)
+	}
+
+	private var accentBar: some View {
+		Capsule()
+			.fill(accentColor.opacity(item.isSelected ? 0.85 : 0.55))
+			.frame(width: 6)
+			.padding(.vertical, 4)
+	}
+
+	private var headerRow: some View {
+		HStack(alignment: .firstTextBaseline, spacing: DesignSystem.Spacing.small) {
+			Text(item.name)
+				.font(DesignSystem.Typography.body)
+				.fontWeight(.semibold)
+				.foregroundColor(palette.primaryText)
+				.lineLimit(1)
+
+			if let confidence = item.confidence {
+				chip(text: "\(confidence.tier.displayName) • \(confidence.scoreDescription)", icon: "shield.checkerboard", color: riskColor)
+			}
+
+			Spacer(minLength: DesignSystem.Spacing.medium)
+		}
+	}
+
+	private var pathRow: some View {
+		Label(item.path, systemImage: "folder")
+			.font(.system(size: 12, weight: .medium, design: .monospaced))
+			.foregroundColor(palette.secondaryText)
+			.lineLimit(1)
+			.truncationMode(.middle)
+	}
+
+	@ViewBuilder
+	private var detailRow: some View {
+		if let summary = detailLine {
+			Label(summary, systemImage: "info.circle")
+				.font(DesignSystem.Typography.caption)
+				.foregroundColor(palette.secondaryText)
+		}
+	}
+
+	private var detailLine: String? {
+		if let metadata = item.metadata {
+			return metadata.detailSummary
+		}
+		if let detail = item.detail, !detail.isEmpty {
+			return detail
+		}
+		return nil
+	}
+
+	@ViewBuilder
+	private var reasonChips: some View {
+		let reasons = reasonLines
+		if !reasons.isEmpty {
+			WrappingTags(data: reasons, spacing: DesignSystem.Spacing.small) { reason in
+				reasonChip(text: reason)
+			}
+		}
+	}
+
+	private var reasonLines: [String] {
+		item.reasons.map { $0.labelLine }.uniqued()
+	}
+
+	private var footerRow: some View {
+		let descriptor = guardDescriptor(for: item.guardDecision)
+		return HStack(spacing: DesignSystem.Spacing.small) {
+			chip(text: descriptor.title, icon: descriptor.icon, color: accentColor)
+
+			if let categoryLabel = item.metadata?.category.label {
+				chip(text: categoryLabel, icon: "folder", color: palette.accentGray)
+			}
+
+			Spacer()
+		}
+	}
+
+	@ViewBuilder
+	private var sizeBadge: some View {
+		if let size = item.size {
+			chip(text: formatBytes(size), icon: "internaldrive", color: palette.accentGreen)
+				.padding(.top, 2)
+		}
+	}
+
+	private func chip(text: String, icon: String, color: Color) -> some View {
+		HStack(spacing: 6) {
+			Image(systemName: icon)
+				.font(.system(size: 11, weight: .semibold))
+			Text(text)
+				.font(.system(size: 12, weight: .semibold, design: .rounded))
+		}
+		.padding(.horizontal, 9)
+		.padding(.vertical, 5)
+		.background(
+			RoundedRectangle(cornerRadius: 10, style: .continuous)
+				.fill(color.opacity(0.12))
+		)
+		.overlay(
+			RoundedRectangle(cornerRadius: 10, style: .continuous)
+				.stroke(color.opacity(0.28), lineWidth: 1)
+		)
+		.foregroundColor(color)
+	}
+
+	private func reasonChip(text: String) -> some View {
+		HStack(spacing: 6) {
+			Image(systemName: "sparkles.rectangle.stack")
+				.font(.system(size: 10, weight: .semibold))
+			Text(text)
+				.font(.system(size: 11, weight: .semibold, design: .rounded))
+		}
+		.padding(.horizontal, 8)
+		.padding(.vertical, 4)
+		.background(
+			RoundedRectangle(cornerRadius: 9, style: .continuous)
+				.fill(palette.surface.opacity(0.6))
+		)
+		.overlay(
+			RoundedRectangle(cornerRadius: 9, style: .continuous)
+				.stroke(palette.accentGray.opacity(0.35), lineWidth: 1)
+		)
+		.foregroundColor(palette.secondaryText)
+	}
+}
+
+// Simple wrapping helper to lay tags across available width without large blocks
+private struct WrappingTags<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {
+	let data: Data
+	let spacing: CGFloat
+	let content: (Data.Element) -> Content
+
+	@State private var totalHeight: CGFloat = .zero
+
+	var body: some View {
+		GeometryReader { geometry in
+			generateContent(in: geometry)
+		}
+		.frame(height: totalHeight)
+	}
+
+	private func generateContent(in geometry: GeometryProxy) -> some View {
+		var width: CGFloat = 0
+		var height: CGFloat = 0
+
+		return ZStack(alignment: .topLeading) {
+			ForEach(Array(data), id: \.self) { element in
+				content(element)
+					.alignmentGuide(.leading) { dimension in
+						if width + dimension.width > geometry.size.width {
+							width = 0
+							height -= dimension.height + spacing
+						}
+						let result = width
+						width += dimension.width + spacing
+						return result
+					}
+					.alignmentGuide(.top) { _ in height }
+			}
+		}
+		.background(SizeReader(totalHeight: $totalHeight))
+	}
+
+	private struct SizeReader: View {
+		@Binding var totalHeight: CGFloat
+
+		var body: some View {
+			GeometryReader { proxy in
+				Color.clear
+					.onAppear { totalHeight = proxy.size.height }
+					.onChange(of: proxy.size.height) { newHeight in
+						totalHeight = newHeight
+					}
+			}
+		}
 	}
 }
 
@@ -910,12 +1084,54 @@ private enum SystemCleanupPreviewData {
 }
 
 #Preview("System Cleanup • Overview") {
-	SystemCleanup(
-		previewCategories: SystemCleanupPreviewData.categories,
-		previewSummary: SystemCleanupPreviewData.summary,
-		previewStates: SystemCleanupPreviewData.states,
-		previewProgress: [.largeFiles: 0.45]
-	)
-	.environment(\.designSystemPalette, .macCleanerDark)
+	PreviewShowcase {
+		SystemCleanup(
+			previewCategories: SystemCleanupPreviewData.categories,
+			previewSummary: SystemCleanupPreviewData.summary,
+			previewStates: SystemCleanupPreviewData.states,
+			previewProgress: [.largeFiles: 0.45]
+		)
+		.environment(\.designSystemPalette, .macCleanerDark)
+	}
+}
+
+private struct PreviewShowcase<Content: View>: View {
+	let content: () -> Content
+
+	init(@ViewBuilder content: @escaping () -> Content) {
+		self.content = content
+	}
+
+	var body: some View {
+		ZStack {
+			LinearGradient(
+				colors: [
+					Color(red: 0.07, green: 0.08, blue: 0.12),
+					Color(red: 0.05, green: 0.07, blue: 0.10)
+				],
+				startPoint: .topLeading,
+				endPoint: .bottomTrailing
+			)
+			.ignoresSafeArea()
+
+			RoundedRectangle(cornerRadius: 28, style: .continuous)
+				.fill(Color.white.opacity(0.02))
+				.blur(radius: 30)
+				.padding(40)
+
+			content()
+				.frame(maxWidth: 1400, maxHeight: 900)
+				.padding(32)
+				.background(
+					RoundedRectangle(cornerRadius: 24, style: .continuous)
+						.fill(Color.black.opacity(0.35))
+						.overlay(
+							RoundedRectangle(cornerRadius: 24, style: .continuous)
+								.stroke(Color.white.opacity(0.08), lineWidth: 1)
+						)
+				)
+				.shadow(color: Color.black.opacity(0.45), radius: 40, x: 0, y: 20)
+		}
+	}
 }
 #endif
