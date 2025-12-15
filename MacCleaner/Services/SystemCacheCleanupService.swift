@@ -90,9 +90,16 @@ final class SystemCacheCleanupService: CleanupService {
         let userCaches = homeLibrary.appendingPathComponent("Caches", isDirectory: true)
         let systemCaches = URL(fileURLWithPath: "/Library/Caches", isDirectory: true)
         let groupContainers = homeLibrary.appendingPathComponent("Group Containers", isDirectory: true)
+        let appContainers = homeLibrary.appendingPathComponent("Containers", isDirectory: true)
         let applicationSupport = homeLibrary.appendingPathComponent("Application Support", isDirectory: true)
         let userLogs = homeLibrary.appendingPathComponent("Logs", isDirectory: true)
         let systemLogs = URL(fileURLWithPath: "/Library/Logs", isDirectory: true)
+        let diagnosticReports = [
+            homeLibrary.appendingPathComponent("Logs/DiagnosticReports", isDirectory: true),
+            URL(fileURLWithPath: "/Library/Logs/DiagnosticReports", isDirectory: true)
+        ]
+        let crashReporter = homeLibrary.appendingPathComponent("Application Support/CrashReporter", isDirectory: true)
+        let coreSimulatorCaches = homeLibrary.appendingPathComponent("Developer/CoreSimulator/Caches", isDirectory: true)
 
         aggregatedItems.append(contentsOf: collectChildEntries(
             under: userCaches,
@@ -130,6 +137,12 @@ final class SystemCacheCleanupService: CleanupService {
             failures: &failures
         ))
 
+        aggregatedItems.append(contentsOf: collectContainerCaches(
+            containersRoot: appContainers,
+            detail: "App container cache",
+            failures: &failures
+        ))
+
         aggregatedItems.append(contentsOf: collectChildEntries(
             under: userLogs,
             includeFiles: true,
@@ -137,6 +150,35 @@ final class SystemCacheCleanupService: CleanupService {
             fileDetail: "User log file",
             failures: &failures,
             nameTransform: { url in "User Logs • \(self.displayName(for: url))" }
+        ))
+
+        for reportsRoot in diagnosticReports {
+            aggregatedItems.append(contentsOf: collectChildEntries(
+                under: reportsRoot,
+                includeFiles: true,
+                directoryDetail: "Diagnostic reports",
+                fileDetail: "Diagnostic crash log",
+                failures: &failures,
+                nameTransform: { url in "Diagnostics • \(self.displayName(for: url))" }
+            ))
+        }
+
+        aggregatedItems.append(contentsOf: collectChildEntries(
+            under: crashReporter,
+            includeFiles: true,
+            directoryDetail: "Crash reporter data",
+            fileDetail: "Crash reporter file",
+            failures: &failures,
+            nameTransform: { url in "Crash Reports • \(self.displayName(for: url))" }
+        ))
+
+        aggregatedItems.append(contentsOf: collectChildEntries(
+            under: coreSimulatorCaches,
+            includeFiles: true,
+            directoryDetail: "CoreSimulator cache directory",
+            fileDetail: "CoreSimulator cache",
+            failures: &failures,
+            nameTransform: { url in "Simulator Caches • \(self.displayName(for: url))" }
         ))
 
         aggregatedItems.append(contentsOf: collectChildEntries(
@@ -414,6 +456,53 @@ final class SystemCacheCleanupService: CleanupService {
             }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+    }
+
+    private func collectContainerCaches(
+        containersRoot: URL,
+        detail: String,
+        failures: inout [String]
+    ) -> [CleanupCategory.CleanupItem] {
+        var results: [CleanupCategory.CleanupItem] = []
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: containersRoot.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return results
+        }
+
+        do {
+            let containers = try fileManager.contentsOfDirectory(
+                at: containersRoot,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            )
+            for container in containers {
+                var isDir: ObjCBool = false
+                guard fileManager.fileExists(atPath: container.path, isDirectory: &isDir), isDir.boolValue else { continue }
+
+                let cachePath = container.appendingPathComponent("Data/Library/Caches", isDirectory: true)
+                var cacheIsDir: ObjCBool = false
+                guard fileManager.fileExists(atPath: cachePath.path, isDirectory: &cacheIsDir), cacheIsDir.boolValue else { continue }
+
+                do {
+                    let entries = try fileManager.contentsOfDirectory(atPath: cachePath.path)
+                    let detailText = entries.isEmpty ? "Empty" : "\(entries.count) items"
+                    let reasons = [CleanupReason(code: "container-cache", label: detail, detail: detailText)]
+                    results.append(CleanupCategory.CleanupItem(
+                        path: cachePath.path,
+                        name: "Container • \(displayName(for: container))",
+                        size: nil,
+                        detail: detailText,
+                        reasons: reasons
+                    ))
+                } catch {
+                    failures.append(cachePath.path)
+                }
+            }
+        } catch {
+            failures.append(containersRoot.path)
+        }
+
+        return results
     }
 
     func execute(
