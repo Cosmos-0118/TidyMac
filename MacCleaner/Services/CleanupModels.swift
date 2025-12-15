@@ -146,7 +146,6 @@ struct CleanupRunSummary: Equatable {
     let headline: String
     let details: [String]
     let recovery: String?
-    let dryRun: Bool
 }
 
 struct CleanupOutcome {

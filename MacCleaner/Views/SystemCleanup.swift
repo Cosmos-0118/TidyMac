@@ -5,42 +5,41 @@ struct SystemCleanup: View {
 
 	private let autoScan: Bool
 	@StateObject private var viewModel: SystemCleanupViewModel
-	@State private var presentedCategoryStep: CleanupStep?
+	@State private var selectedStep: CleanupStep?
+	@State private var pageByStep: [CleanupStep: Int] = [:]
 
 	init(
-		services: [AnyCleanupService] = CleanupServiceRegistry.default,
-		autoScan: Bool = true,
-		dryRun: Bool = true,
-		viewModel: SystemCleanupViewModel? = nil
-	) {
-		self.autoScan = autoScan
-		if let viewModel {
-			_viewModel = StateObject(wrappedValue: viewModel)
-		} else {
-			_viewModel = StateObject(wrappedValue: SystemCleanupViewModel(services: services, dryRun: dryRun))
+			services: [AnyCleanupService] = CleanupServiceRegistry.default,
+			autoScan: Bool = true,
+			viewModel: SystemCleanupViewModel? = nil
+		) {
+			self.autoScan = autoScan
+			if let viewModel {
+				_viewModel = StateObject(wrappedValue: viewModel)
+			} else {
+				_viewModel = StateObject(wrappedValue: SystemCleanupViewModel(services: services))
+			}
 		}
-	}
 
 #if DEBUG
 	init(
-		previewCategories: [CleanupCategory],
-		previewSummary: CleanupRunSummary? = nil,
-		previewStates: [CleanupStep: CleanupStepState] = [:],
-		previewProgress: [CleanupStep: Double] = [:],
-		dryRun: Bool = true
-	) {
-		autoScan = false
-		let previewModel = SystemCleanupViewModel(services: [], dryRun: dryRun)
-		previewModel.categories = previewCategories
-		if previewStates.isEmpty {
-			previewModel.stepStates = Dictionary(uniqueKeysWithValues: CleanupStep.allCases.map { ($0, .pending) })
-		} else {
-			previewModel.stepStates = previewStates
+			previewCategories: [CleanupCategory],
+			previewSummary: CleanupRunSummary? = nil,
+			previewStates: [CleanupStep: CleanupStepState] = [:],
+			previewProgress: [CleanupStep: Double] = [:]
+		) {
+			autoScan = false
+			let previewModel = SystemCleanupViewModel(services: [])
+			previewModel.categories = previewCategories
+			if previewStates.isEmpty {
+				previewModel.stepStates = Dictionary(uniqueKeysWithValues: CleanupStep.allCases.map { ($0, .pending) })
+			} else {
+				previewModel.stepStates = previewStates
+			}
+			previewModel.stepProgress = previewProgress
+			previewModel.runSummary = previewSummary
+			_viewModel = StateObject(wrappedValue: previewModel)
 		}
-		previewModel.stepProgress = previewProgress
-		previewModel.runSummary = previewSummary
-		_viewModel = StateObject(wrappedValue: previewModel)
-	}
 #endif
 
 	var body: some View {
@@ -48,55 +47,37 @@ struct SystemCleanup: View {
 			palette.background
 				.ignoresSafeArea()
 
-			ScrollView {
-				VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-					header
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
+				header
 
-					if viewModel.isRunning {
-						runningStatusCard
-					}
-
-					if let summary = viewModel.runSummary {
-						summaryCard(summary)
-					}
-
-					if viewModel.isScanning {
-						scanningCard
-					} else if viewModel.categories.isEmpty {
-						emptyStateCard
-					} else {
-						LazyVStack(spacing: DesignSystem.Spacing.medium) {
-							ForEach($viewModel.categories) { category in
-								let step = category.wrappedValue.step
-								CleanupCategoryCard(
-									category: category,
-									state: viewModel.stepStates[step],
-									progress: viewModel.stepProgress[step],
-									disabled: viewModel.isRunning || viewModel.isScanning,
-									onViewItems: { presentedCategoryStep = step }
-								)
-							}
-						}
-					}
+				if viewModel.isRunning {
+					runningStatusCard
 				}
-				.padding(DesignSystem.Spacing.xLarge)
+
+				if let summary = viewModel.runSummary {
+					summaryCard(summary)
+				}
+
+				if viewModel.isScanning {
+					scanningCard
+				} else if viewModel.categories.isEmpty {
+					emptyStateCard
+				} else {
+					twoColumnLayout
+				}
 			}
-			.scrollIndicators(.hidden)
+			.padding(DesignSystem.Spacing.xLarge)
 		}
 		.dynamicTypeSize(.medium ... .accessibility3)
 		.onAppear {
 			viewModel.handleAppear(autoScan: autoScan)
+			selectDefaultStepIfNeeded()
 		}
-		.sheet(item: $presentedCategoryStep) { step in
-			if let categoryBinding = binding(for: step) {
-				CleanupCategoryItemsView(
-					category: categoryBinding,
-					disabled: viewModel.isRunning || viewModel.isScanning
-				)
-			} else {
-				Text("Category unavailable")
-					.padding()
-			}
+		.onChange(of: viewModel.categories) { _ in
+			selectDefaultStepIfNeeded()
+		}
+		.onChange(of: selectedStep) { _ in
+			resetPageForSelection()
 		}
 	}
 
@@ -122,6 +103,12 @@ struct SystemCleanup: View {
 
 	private var actionBar: some View {
 		HStack(spacing: DesignSystem.Spacing.medium) {
+			Button(allSelected ? "Deselect All" : "Select All") {
+				viewModel.selectAll(!allSelected)
+			}
+			.buttonStyle(SecondaryButtonStyle())
+			.disabled(viewModel.isScanning || viewModel.isRunning)
+
 			Button {
 				Task { await viewModel.scanServices() }
 			} label: {
@@ -130,46 +117,27 @@ struct SystemCleanup: View {
 			.buttonStyle(SecondaryButtonStyle())
 			.disabled(viewModel.isScanning || viewModel.isRunning)
 
-			Toggle(isOn: $viewModel.dryRun) {
-				Text("Dry run (preview only)")
-					.foregroundColor(palette.secondaryText)
-			}
-			.toggleStyle(.switch)
-			.disabled(viewModel.isRunning)
-			.accessibilityHint("Run cleanup without deleting files")
-
 			Spacer()
 
-			runButton
+			deleteButton
 		}
 	}
 
-	private var runButton: some View {
-		Group {
-			if viewModel.dryRun {
-				Button {
-					Task { await viewModel.runCleanup() }
-				} label: {
-					Label("Preview Cleanup", systemImage: "eye")
-				}
-				.buttonStyle(SecondaryButtonStyle())
-			} else {
-				Button {
-					Task { await viewModel.runCleanup() }
-				} label: {
-					Label("Run Cleanup", systemImage: "trash")
-				}
-				.buttonStyle(PrimaryActionButtonStyle())
-			}
+	private var deleteButton: some View {
+		Button {
+			Task { await viewModel.runCleanup() }
+		} label: {
+			Label("Delete Selected", systemImage: "trash")
 		}
+		.buttonStyle(PrimaryActionButtonStyle())
 		.disabled(!canRunCleanup || viewModel.isScanning || viewModel.isRunning)
-		.accessibilityHint(viewModel.dryRun ? "Runs a dry run to preview deletions" : "Deletes the selected items")
+		.accessibilityHint("Deletes all selected cleanup items")
 	}
 
 	private var runningStatusCard: some View {
 		StatusCard(
-			title: viewModel.dryRun ? "Dry Run in Progress" : "Cleanup in Progress",
-			iconName: viewModel.dryRun ? "eye.fill" : "trash.fill",
+			title: "Cleanup in Progress",
+			iconName: "trash.fill",
 			accent: palette.accentGreen
 		) {
 			VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
@@ -227,7 +195,7 @@ struct SystemCleanup: View {
 						.frame(maxWidth: .infinity, alignment: .leading)
 				}
 
-				Text(summary.dryRun ? "Dry run only. No files were removed." : "Cleanup completed with file deletions.")
+				Text("Cleanup executed.")
 					.font(DesignSystem.Typography.caption)
 					.foregroundColor(palette.secondaryText)
 			}
@@ -237,14 +205,67 @@ struct SystemCleanup: View {
 	private var progressDescription: String {
 		let clamped = min(max(viewModel.overallProgress, 0), 1)
 		let percentage = Int((clamped * 100).rounded())
-		if viewModel.dryRun {
-			return "Previewing cleanup… \(percentage)% complete"
-		}
-		return "Running cleanup… \(percentage)% complete"
+		return "Deleting files… \(percentage)% complete"
 	}
 
 	private var canRunCleanup: Bool {
 		viewModel.categories.contains { $0.hasSelection }
+	}
+
+	private var twoColumnLayout: some View {
+		HStack(alignment: .top, spacing: DesignSystem.Spacing.large) {
+			categorySidebar
+			detailPane
+		}
+	}
+
+	private var categorySidebar: some View {
+		ScrollView {
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+				ForEach($viewModel.categories) { category in
+					let step = category.wrappedValue.step
+					Button {
+						selectedStep = step
+					} label: {
+						CategorySidebarRow(
+							category: category.wrappedValue,
+							state: viewModel.stepStates[step],
+							progress: viewModel.stepProgress[step],
+							isSelected: selectedStep == step
+						)
+					}
+					.buttonStyle(.plain)
+				}
+			}
+		}
+		.frame(width: 260, alignment: .top)
+	}
+
+	@ViewBuilder
+	private var detailPane: some View {
+		if let step = selectedStep, let categoryBinding = binding(for: step) {
+			CategoryDetailView(
+				category: categoryBinding,
+				page: currentPage(for: step),
+				pageSize: 100,
+				onPageChange: { newPage in setPage(newPage, for: step) },
+				disabled: viewModel.isRunning || viewModel.isScanning
+			)
+			.frame(maxWidth: .infinity, alignment: .topLeading)
+		} else {
+			Text("Select a category to review its items.")
+				.font(DesignSystem.Typography.body)
+				.foregroundColor(palette.secondaryText)
+				.frame(maxWidth: .infinity, alignment: .leading)
+		}
+	}
+
+	private var allSelected: Bool {
+		guard !viewModel.categories.isEmpty else { return false }
+		return viewModel.categories.allSatisfy { category in
+			guard category.isEnabled, !category.items.isEmpty else { return false }
+			return category.items.allSatisfy { $0.isSelected }
+		}
 	}
 
 	private var selectionSummary: String {
@@ -263,10 +284,213 @@ struct SystemCleanup: View {
 		return "\(totalItems) \(itemLabel) selected."
 	}
 
+	private func selectDefaultStepIfNeeded() {
+		guard !viewModel.categories.isEmpty else {
+			selectedStep = nil
+			return
+		}
+		if let selectedStep, viewModel.categories.contains(where: { $0.step == selectedStep }) {
+			return
+		}
+		selectedStep = viewModel.categories.first?.step
+	}
+
+	private func resetPageForSelection() {
+		guard let step = selectedStep else { return }
+		pageByStep[step] = 0
+	}
+
+	private func currentPage(for step: CleanupStep) -> Int {
+		max(0, pageByStep[step] ?? 0)
+	}
+
+	private func setPage(_ page: Int, for step: CleanupStep) {
+		pageByStep[step] = max(0, page)
+	}
+
 	private func binding(for step: CleanupStep) -> Binding<CleanupCategory>? {
 		guard let index = viewModel.categories.firstIndex(where: { $0.step == step }) else { return nil }
 		return $viewModel.categories[index]
 	}
+
+
+private struct CategorySidebarRow: View {
+	@Environment(\.designSystemPalette) private var palette
+
+	let category: CleanupCategory
+	let state: CleanupStepState?
+	let progress: Double?
+	let isSelected: Bool
+
+	var body: some View {
+		HStack(alignment: .top, spacing: DesignSystem.Spacing.small) {
+			Image(systemName: category.step.icon)
+				.foregroundColor(palette.accentGreen)
+				.font(.system(size: 16, weight: .semibold))
+
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+				Text(category.step.title)
+					.font(DesignSystem.Typography.body)
+					.foregroundColor(palette.primaryText)
+
+				Text(sidebarSummary)
+					.font(DesignSystem.Typography.caption)
+					.foregroundColor(palette.secondaryText)
+
+				if let descriptor = stateDescriptor() {
+					Label(descriptor.title, systemImage: descriptor.icon)
+						.font(DesignSystem.Typography.caption)
+						.foregroundColor(descriptor.color)
+				}
+			}
+
+			Spacer()
+
+			if category.isEnabled {
+				Image(systemName: "checkmark.circle.fill")
+					.foregroundColor(palette.accentGreen)
+			} else {
+				Image(systemName: "circle")
+					.foregroundColor(palette.accentGray)
+			}
+		}
+		.padding(DesignSystem.Spacing.medium)
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.background(isSelected ? palette.surface.opacity(0.8) : palette.surface.opacity(0.4))
+		.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+		.overlay(
+			RoundedRectangle(cornerRadius: 12, style: .continuous)
+				.stroke(isSelected ? palette.accentGreen.opacity(0.6) : palette.accentGray.opacity(0.2), lineWidth: 1)
+		)
+	}
+
+	private var sidebarSummary: String {
+		let countSummary = category.totalCount > 0 ? "\(category.selectedCount)/\(category.totalCount)" : "No items"
+		if let size = category.selectedSize ?? category.totalSize {
+			return "\(countSummary) • ~\(formatBytes(size))"
+		}
+		return countSummary
+	}
+
+	private func stateDescriptor() -> (title: String, icon: String, color: Color)? {
+		switch state ?? .pending {
+		case .pending:
+			return nil
+		case .running:
+			return ("Running", "arrow.triangle.2.circlepath", palette.accentGreen)
+		case .success:
+			return ("Completed", "checkmark.circle", palette.accentGreen)
+		case .failure:
+			return ("Needs Attention", "exclamationmark.triangle", palette.accentRed)
+		}
+	}
+}
+
+private struct CategoryDetailView: View {
+	@Environment(\.designSystemPalette) private var palette
+
+	@Binding var category: CleanupCategory
+	let page: Int
+	let pageSize: Int
+	let onPageChange: (Int) -> Void
+	let disabled: Bool
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+			header
+			Divider()
+			itemsList
+			pagination
+		}
+	}
+
+	private var header: some View {
+		HStack(alignment: .center, spacing: DesignSystem.Spacing.medium) {
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+				Text(category.step.title)
+					.font(DesignSystem.Typography.headline)
+					.foregroundColor(palette.primaryText)
+
+				Text(summaryLine)
+					.font(DesignSystem.Typography.caption)
+					.foregroundColor(palette.secondaryText)
+			}
+
+			Spacer()
+
+			Toggle(isOn: $category.isEnabled) {
+				Text("Enable")
+					.foregroundColor(palette.secondaryText)
+			}
+			.toggleStyle(.switch)
+			.disabled(category.items.isEmpty || disabled)
+		}
+	}
+
+	private var itemsList: some View {
+		ScrollView {
+			VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+				ForEach(pagedIndices, id: \.self) { index in
+					CleanupItemRow(
+						item: $category.items[index],
+						isEnabled: category.isEnabled && !disabled
+					)
+				}
+
+				if category.items.isEmpty {
+					Text("No files discovered for this category.")
+						.font(DesignSystem.Typography.caption)
+						.foregroundColor(palette.secondaryText)
+				}
+			}
+		}
+	}
+
+	private var pagination: some View {
+		let totalPages = max(1, Int(ceil(Double(category.items.count) / Double(pageSize))))
+		let clampedPage = min(max(page, 0), totalPages - 1)
+		return HStack {
+			Button {
+				onPageChange(max(clampedPage - 1, 0))
+			} label: {
+				Label("Prev", systemImage: "chevron.left")
+			}
+			.buttonStyle(SecondaryButtonStyle())
+			.disabled(clampedPage == 0)
+
+			Text("Page \(clampedPage + 1) of \(totalPages)")
+				.font(DesignSystem.Typography.caption)
+				.foregroundColor(palette.secondaryText)
+				.frame(maxWidth: .infinity)
+
+			Button {
+				onPageChange(min(clampedPage + 1, totalPages - 1))
+			} label: {
+				Label("Next", systemImage: "chevron.right")
+			}
+			.buttonStyle(SecondaryButtonStyle())
+			.disabled(clampedPage >= totalPages - 1)
+		}
+	}
+
+	private var summaryLine: String {
+		let countSummary = category.totalCount > 0 ? "\(category.selectedCount) of \(category.totalCount) selected" : "No items detected"
+		if let size = category.selectedSize ?? category.totalSize {
+			return "\(countSummary) • ~\(formatBytes(size))"
+		}
+		return countSummary
+	}
+
+	private var pagedIndices: [Int] {
+		let total = category.items.count
+		guard total > 0 else { return [] }
+		let totalPages = max(1, Int(ceil(Double(total) / Double(pageSize))))
+		let clampedPage = min(max(page, 0), totalPages - 1)
+		let start = min(clampedPage * pageSize, total)
+		let end = min(start + pageSize, total)
+		return Array(category.items.indices[start..<end])
+	}
+}
 }
 
 private struct CleanupCategoryCard: View {
@@ -276,20 +500,17 @@ private struct CleanupCategoryCard: View {
 	let state: CleanupStepState?
 	let progress: Double?
 	let disabled: Bool
-	let onViewItems: () -> Void
 
 	init(
 		category: Binding<CleanupCategory>,
 		state: CleanupStepState?,
 		progress: Double?,
-		disabled: Bool,
-		onViewItems: @escaping () -> Void
+		disabled: Bool
 	) {
 		_category = category
 		self.state = state
 		self.progress = progress
 		self.disabled = disabled
-		self.onViewItems = onViewItems
 	}
 
 	var body: some View {
@@ -388,15 +609,6 @@ private struct CleanupCategoryCard: View {
 				Text(categorySummary)
 					.font(DesignSystem.Typography.caption)
 					.foregroundColor(palette.secondaryText)
-
-				Button {
-					onViewItems()
-				} label: {
-					Label("Review Items", systemImage: "list.bullet")
-						.font(DesignSystem.Typography.caption)
-				}
-				.buttonStyle(SecondaryButtonStyle())
-				.disabled(disabled)
 			}
 		}
 	}
@@ -539,94 +751,6 @@ private struct CleanupItemRow: View {
 	}
 }
 
-private struct CleanupCategoryItemsView: View {
-	@Environment(\.designSystemPalette) private var palette
-	@Environment(\.dismiss) private var dismiss
-
-	@Binding var category: CleanupCategory
-	let disabled: Bool
-
-	var body: some View {
-		navigationContainer
-			.frame(minWidth: 480, minHeight: 520)
-	}
-
-	@ViewBuilder
-	private var content: some View {
-		List {
-			Section(header: Text(summaryHeader)) {
-				if category.items.isEmpty {
-					Text("No files discovered for this category.")
-						.font(DesignSystem.Typography.caption)
-						.foregroundColor(palette.secondaryText)
-				} else {
-					ForEach($category.items) { item in
-						CleanupItemRow(
-							item: item,
-							isEnabled: category.isEnabled && !disabled
-						)
-					}
-				}
-			}
-
-			if let note = category.note, !note.isEmpty {
-				Section("Notes") {
-					Text(note)
-						.font(DesignSystem.Typography.caption)
-						.foregroundColor(palette.secondaryText)
-				}
-			}
-
-			if let error = category.error, !error.isEmpty {
-				Section("Warnings") {
-					Text(error)
-						.font(DesignSystem.Typography.caption)
-						.foregroundColor(palette.accentRed)
-				}
-			}
-		}
-		#if os(macOS)
-			.listStyle(.inset)
-		#else
-			.listStyle(.insetGrouped)
-		#endif
-		.navigationTitle(category.step.title)
-	}
-
-	@ViewBuilder
-	private var navigationContainer: some View {
-		if #available(macOS 13, *) {
-			NavigationStack {
-				content
-			}
-			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
-					Button("Done") { dismiss() }
-				}
-			}
-		} else {
-			NavigationView {
-				content
-			}
-			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
-					Button("Done") { dismiss() }
-				}
-			}
-		}
-	}
-
-	private var summaryHeader: String {
-		guard !category.items.isEmpty else { return "Summary" }
-		let base = "\(category.selectedCount) of \(category.totalCount) selected"
-		if let size = category.selectedSize ?? category.totalSize {
-			return "\(base) • ~\(formatBytes(size))"
-		}
-		return base
-	}
-
-}
-
 private extension CleanupReason {
 	var labelLine: String {
 		if let detail, !detail.isEmpty {
@@ -723,8 +847,7 @@ private enum SystemCleanupPreviewData {
 			"System Caches: Removed 2 folders (1.2 GB)",
 			"Large & Old Files: Pending user confirmation"
 		],
-		recovery: "Close Xcode and retry removing build artifacts.",
-		dryRun: false
+		recovery: "Close Xcode and retry removing build artifacts."
 	)
 }
 
@@ -733,8 +856,7 @@ private enum SystemCleanupPreviewData {
 		previewCategories: SystemCleanupPreviewData.categories,
 		previewSummary: SystemCleanupPreviewData.summary,
 		previewStates: SystemCleanupPreviewData.states,
-		previewProgress: [.largeFiles: 0.45],
-		dryRun: false
+		previewProgress: [.largeFiles: 0.45]
 	)
 	.environment(\.designSystemPalette, .macCleanerDark)
 }

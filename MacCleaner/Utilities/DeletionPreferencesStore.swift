@@ -49,19 +49,6 @@ final class DeletionPreferencesStore {
         updateExclusion(for: path, excluded: false)
     }
 
-    // MARK: - Dry Run Preview
-
-    func record(preview: DryRunPreviewSnapshot?) {
-        queue.async {
-            self.preferences.dryRunPreview = preview
-            self.persistChanges()
-        }
-    }
-
-    func latestPreview() -> DryRunPreviewSnapshot? {
-        queue.sync { preferences.dryRunPreview }
-    }
-
     // MARK: - Helpers
 
     private func normalize(_ path: String) -> String {

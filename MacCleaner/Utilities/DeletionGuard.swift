@@ -105,7 +105,31 @@ final class DeletionGuard {
     }
 
     private func isRestricted(_ path: String) -> Bool {
-        path.isEmpty || path == "/"
+        if path.isEmpty || path == "/" {
+            return true
+        }
+
+        let criticalPrefixes: [String] = [
+            "/System",
+            "/bin",
+            "/sbin",
+            "/usr/bin",
+            "/usr/lib",
+            "/private/var/db",
+            "/private/var/run",
+            "/private/var/vm",
+            "/private/etc",
+            "/etc",
+            "/private/var/root"
+        ]
+
+        for prefix in criticalPrefixes {
+            if path == prefix || path.hasPrefix(prefix + "/") {
+                return true
+            }
+        }
+
+        return false
     }
 }
 

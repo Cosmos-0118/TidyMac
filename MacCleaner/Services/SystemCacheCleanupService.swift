@@ -582,6 +582,7 @@ final class SystemCacheCleanupService: CleanupService {
         var privilegedFailureMessage: String?
         var restrictedPaths: [String] = []
         var systemProtectedPaths: Set<String> = []
+        var permissionDeniedPaths: Set<String> = []
         var excludedSelections = actionable.excludedSelections
         var skippedProtected = actionable.skippedProtected
 
@@ -699,6 +700,22 @@ final class SystemCacheCleanupService: CleanupService {
                                 )
                             }
                         }
+                    } else if isPermissionError(error) {
+                        var shouldLog = false
+                        syncQueue.sync {
+                            let inserted = permissionDeniedPaths.insert(path).inserted
+                            if inserted, failureLogCount < logSampleLimit {
+                                failureLogCount += 1
+                                shouldLog = true
+                            }
+                        }
+                        if shouldLog {
+                            Diagnostics.warning(
+                                category: .cleanup,
+                                message: "Skipping cache path denied by macOS.",
+                                metadata: ["path": path]
+                            )
+                        }
                     } else {
                         var shouldLog = false
                         syncQueue.sync {
@@ -797,6 +814,18 @@ final class SystemCacheCleanupService: CleanupService {
                             metadata: ["path": path]
                         )
                     }
+                } else if isPermissionError(error) {
+                    syncQueue.sync {
+                        let inserted = permissionDeniedPaths.insert(path).inserted
+                        if inserted, failureLogCount < logSampleLimit {
+                            failureLogCount += 1
+                        }
+                    }
+                    Diagnostics.warning(
+                        category: .cleanup,
+                        message: "Skipping cache directory denied by macOS.",
+                        metadata: ["path": path]
+                    )
                 } else {
                     syncQueue.sync {
                         if !failures.contains(path) {
@@ -810,7 +839,7 @@ final class SystemCacheCleanupService: CleanupService {
                         metadata: ["path": path]
                     )
                 }
-            }
+        }
         }
 
         group.wait()
@@ -904,14 +933,16 @@ final class SystemCacheCleanupService: CleanupService {
                 )
             case let .failure(message):
                 privilegedFailureMessage = message
-                Diagnostics.error(
+                Diagnostics.warning(
                     category: .cleanup,
-                    message: "Privileged cache cleanup failed.",
-                    suggestion: message,
-                    metadata: ["paths": elevatedPaths.joined(separator: ", ")]
+                    message: "Privileged cache cleanup skipped by macOS.",
+                    metadata: [
+                        "paths": elevatedPaths.joined(separator: ", "),
+                        "note": message
+                    ]
                 )
-                let newFailures = elevatedPaths.filter { !failures.contains($0) }
-                failures.append(contentsOf: newFailures)
+                let skipped = elevatedPaths.filter { !permissionDeniedPaths.contains($0) }
+                permissionDeniedPaths.formUnion(skipped)
             }
         }
 
@@ -923,6 +954,9 @@ final class SystemCacheCleanupService: CleanupService {
             if !systemProtectedPaths.isEmpty {
                 message += " macOS protected \(systemProtectedPaths.count) item(s); they remain for safety."
             }
+            if !permissionDeniedPaths.isEmpty {
+                message += " Skipped \(permissionDeniedPaths.count) item(s) denied by macOS."
+            }
             var metadata: [String: String] = [
                 "removed": "\(removedCount)",
                 "skipped": "\(skippedProtected)",
@@ -933,6 +967,13 @@ final class SystemCacheCleanupService: CleanupService {
                 let sample = Array(systemProtectedPaths).sorted().prefix(logSampleLimit)
                 if !sample.isEmpty {
                     metadata["systemProtectedSamples"] = sample.joined(separator: ", ")
+                }
+            }
+            if !permissionDeniedPaths.isEmpty {
+                metadata["permissionDenied"] = "\(permissionDeniedPaths.count)"
+                let sample = Array(permissionDeniedPaths).sorted().prefix(logSampleLimit)
+                if !sample.isEmpty {
+                    metadata["permissionDeniedSamples"] = sample.joined(separator: ", ")
                 }
             }
             let excludedSample = Array(excludedSelections).prefix(logSampleLimit)

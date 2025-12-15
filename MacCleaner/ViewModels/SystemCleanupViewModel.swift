@@ -8,15 +8,13 @@ final class SystemCleanupViewModel: ObservableObject {
     @Published var isScanning: Bool
     @Published var isRunning: Bool
     @Published var overallProgress: Double
-    @Published var dryRun: Bool
     @Published var runSummary: CleanupRunSummary?
-    @Published var lastDryRunPreview: DryRunPreviewSnapshot?
 
     private let services: [AnyCleanupService]
-    private let preferencesStore = DeletionPreferencesStore.shared
+    private let safePathFilter = SafePathFilter()
     private var hasPerformedInitialScan = false
 
-    init(services: [AnyCleanupService] = CleanupServiceRegistry.default, dryRun: Bool = true) {
+    init(services: [AnyCleanupService] = CleanupServiceRegistry.default) {
         self.services = services
         self.categories = []
         self.stepStates = Dictionary(uniqueKeysWithValues: CleanupStep.allCases.map { ($0, .pending) })
@@ -24,9 +22,7 @@ final class SystemCleanupViewModel: ObservableObject {
         self.isScanning = false
         self.isRunning = false
         self.overallProgress = 0
-        self.dryRun = dryRun
         self.runSummary = nil
-    self.lastDryRunPreview = preferencesStore.latestPreview()
     }
 
     func handleAppear(autoScan: Bool) {
@@ -51,6 +47,7 @@ final class SystemCleanupViewModel: ObservableObject {
         var updatedCategories: [CleanupCategory] = []
         for service in services {
             var scannedCategory = await service.scan()
+            scannedCategory.items = safePathFilter.filter(scannedCategory.items)
 
             if let previous = previousSelections[scannedCategory.step] {
                 scannedCategory.isEnabled = previous.isEnabled && !scannedCategory.items.isEmpty
@@ -83,7 +80,6 @@ final class SystemCleanupViewModel: ObservableObject {
             category: .cleanup,
             message: "User initiated cleanup run.",
             metadata: [
-                "dryRun": dryRun ? "true" : "false",
                 "steps": selectedSteps,
                 "selectedItems": "\(selectionTotal)"
             ]
@@ -93,19 +89,10 @@ final class SystemCleanupViewModel: ObservableObject {
             for item in category.selectedItems {
                 Diagnostics.info(
                     category: .cleanup,
-                    message: dryRun ? "Queued cleanup preview." : "Queued cleanup item.",
-                    metadata: telemetryMetadata(for: item, step: category.step, dryRun: dryRun)
+                    message: "Queued cleanup item.",
+                    metadata: telemetryMetadata(for: item, step: category.step)
                 )
             }
-        }
-
-        if dryRun {
-            let snapshot = DryRunPreviewSnapshot.fromCleanupCategories(activeCategories)
-            preferencesStore.record(preview: snapshot)
-            lastDryRunPreview = snapshot
-        } else {
-            preferencesStore.record(preview: nil)
-            lastDryRunPreview = nil
         }
 
         isRunning = true
@@ -138,14 +125,13 @@ final class SystemCleanupViewModel: ObservableObject {
                     category: .cleanup,
                     message: "Executing system cache cleanup step.",
                     metadata: [
-                        "dryRun": dryRun ? "true" : "false",
                         "selected": "\(selectedItems.count)"
                     ]
                 )
             }
 
             let tracker = CleanupProgress(initialTotal: max(selectedItems.count, 1))
-            let outcome = await service.execute(items: selectedItems, dryRun: dryRun, progressTracker: tracker) { progress in
+            let outcome = await service.execute(items: selectedItems, dryRun: false, progressTracker: tracker) { progress in
                 Task { @MainActor in
                     self.stepProgress[step] = progress
                     self.overallProgress = self.weightedProgress(weights: weights, progress: self.stepProgress, totalWeight: totalWeight)
@@ -155,7 +141,7 @@ final class SystemCleanupViewModel: ObservableObject {
             Diagnostics.info(
                 category: .cleanup,
                 message: "Cleanup step completed: \(step.title)",
-                metadata: cleanupOutcomeMetadata(step: step, outcome: outcome, selectedItems: selectedItems, dryRun: dryRun)
+                metadata: cleanupOutcomeMetadata(step: step, outcome: outcome, selectedItems: selectedItems)
             )
 
             if outcome.success {
@@ -172,26 +158,31 @@ final class SystemCleanupViewModel: ObservableObject {
         }
 
         let success = failures.isEmpty
-        let headline: String
-        if dryRun {
-            headline = success ? "Dry run complete. Safe to execute cleanup." : "Dry run flagged issues."
-        } else {
-            headline = success ? "Cleanup completed successfully." : "Cleanup completed with issues."
-        }
+        let headline = success ? "Cleanup completed successfully." : "Cleanup completed with issues."
 
         runSummary = CleanupRunSummary(
             success: success,
             headline: headline,
             details: details,
-            recovery: recoveries.isEmpty ? nil : recoveries.uniqued().joined(separator: " "),
-            dryRun: dryRun
+            recovery: recoveries.isEmpty ? nil : recoveries.uniqued().joined(separator: " ")
         )
 
         isRunning = false
         overallProgress = success ? 1 : overallProgress
 
-        if success && !dryRun {
+        if success {
             await scanServices(preservingSummary: true)
+        }
+    }
+
+    func selectAll(_ enabled: Bool) {
+        categories = categories.map { category in
+            var updated = category
+            updated.isEnabled = enabled && !updated.items.isEmpty
+            for index in updated.items.indices {
+                updated.items[index].isSelected = enabled
+            }
+            return updated
         }
     }
 
@@ -209,12 +200,11 @@ final class SystemCleanupViewModel: ObservableObject {
         return min(max(accumulated / totalWeight, 0), 1)
     }
 
-    private func telemetryMetadata(for item: CleanupCategory.CleanupItem, step: CleanupStep, dryRun: Bool) -> [String: String] {
+    private func telemetryMetadata(for item: CleanupCategory.CleanupItem, step: CleanupStep) -> [String: String] {
         var metadata: [String: String] = [
             "step": step.title,
             "path": item.path,
-            "decision": item.guardDecision.telemetryValue,
-            "dryRun": dryRun ? "true" : "false"
+            "decision": item.guardDecision.telemetryValue
         ]
         if let size = item.size {
             metadata["sizeBytes"] = String(size)
@@ -227,11 +217,10 @@ final class SystemCleanupViewModel: ObservableObject {
         return metadata
     }
 
-    private func cleanupOutcomeMetadata(step: CleanupStep, outcome: CleanupOutcome, selectedItems: [CleanupCategory.CleanupItem], dryRun: Bool) -> [String: String] {
+    private func cleanupOutcomeMetadata(step: CleanupStep, outcome: CleanupOutcome, selectedItems: [CleanupCategory.CleanupItem]) -> [String: String] {
         var metadata: [String: String] = [
             "step": step.title,
             "success": outcome.success ? "true" : "false",
-            "dryRun": dryRun ? "true" : "false",
             "message": outcome.message
         ]
         if let recovery = outcome.recoverySuggestion, !recovery.isEmpty {
@@ -245,6 +234,44 @@ final class SystemCleanupViewModel: ObservableObject {
             metadata["sizeReadable"] = formatByteCount(sizeTotal)
         }
         return metadata
+    }
+}
+
+private struct SafePathFilter {
+    private let deletionGuard: DeletionGuarding
+    private let allowedPrefixes: [String]
+
+    init(
+        deletionGuard: DeletionGuarding = DeletionGuard.shared,
+        fileManager: FileManager = .default
+    ) {
+        self.deletionGuard = deletionGuard
+        let home = fileManager.homeDirectoryForCurrentUser.path
+        allowedPrefixes = [
+            home,
+            home + "/Library/Caches",
+            home + "/Library/Logs",
+            home + "/Library/Application Support",
+            "/Users/Shared",
+            "/tmp",
+            "/private/tmp",
+            "/private/var/tmp",
+            "/private/var/folders",
+            "/Library/Caches",
+            "/Library/Logs",
+            "/private/var/log"
+        ]
+    }
+
+    func filter(_ items: [CleanupCategory.CleanupItem]) -> [CleanupCategory.CleanupItem] {
+        items.filter { item in
+            let normalized = URL(fileURLWithPath: item.path).standardizedFileURL.path
+            return isAllowed(normalized) && deletionGuard.decision(for: normalized) != .restricted
+        }
+    }
+
+    private func isAllowed(_ path: String) -> Bool {
+        allowedPrefixes.contains { path == $0 || path.hasPrefix($0 + "/") }
     }
 }
 
