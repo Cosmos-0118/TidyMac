@@ -13,7 +13,7 @@ struct LargeFilesFinder: View {
 
     init(autoScan: Bool = true, viewModel: LargeFilesFinderViewModel? = nil) {
         self.autoScan = autoScan
-        let resolvedModel = viewModel ?? LargeFilesFinderViewModel()
+        let resolvedModel = viewModel ?? LargeFilesFinderViewModel.shared
         _viewModel = StateObject(wrappedValue: resolvedModel)
         _sortOrder = State(initialValue: [KeyPathComparator(\.size, order: .reverse)])
     }

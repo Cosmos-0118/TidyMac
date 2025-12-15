@@ -2,6 +2,7 @@ import Foundation
 
 @MainActor
 final class LargeFilesFinderViewModel: ObservableObject {
+    static let shared = LargeFilesFinderViewModel()
     @Published private(set) var largeFiles: [FileDetail]
     @Published private(set) var scanCompleted: Bool
     @Published private(set) var totalFiles: Int
@@ -20,6 +21,17 @@ final class LargeFilesFinderViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var didTriggerInitialScan = false
     private var currentSortOrder: [KeyPathComparator<FileDetail>]
+    
+    private struct CachePayload: Codable {
+        let largeFiles: [FileDetail]
+        let scanCompleted: Bool
+        let totalFiles: Int
+        let scannedFiles: Int
+        let excludedFileIDs: Set<FileDetail.ID>
+        let selection: Set<FileDetail.ID>
+        let permissionIssue: Bool
+        let permissionMessage: String?
+    }
 
     init(
         service: LargeFileScanningService = FileSystemLargeFileScanningService(),
@@ -50,6 +62,8 @@ final class LargeFilesFinderViewModel: ObservableObject {
                 excludedFileIDs.formUnion(persisted)
                 self.selection.subtract(persisted)
             }
+        } else {
+            loadCacheIfAvailable()
         }
     }
 
@@ -58,7 +72,9 @@ final class LargeFilesFinderViewModel: ObservableObject {
     }
 
     func handleAppear(autoScan: Bool) {
-        guard autoScan, !didTriggerInitialScan else { return }
+        guard autoScan else { return }
+        if isScanning { return }
+        if didTriggerInitialScan, scanCompleted, !largeFiles.isEmpty { return }
         didTriggerInitialScan = true
         startScan()
     }
@@ -105,6 +121,7 @@ final class LargeFilesFinderViewModel: ObservableObject {
             self.permissionIssue = result.permissionIssue
             self.permissionMessage = result.permissionMessage
             self.scanCompleted = true
+            self.persistCache()
         }
     }
 
@@ -117,6 +134,7 @@ final class LargeFilesFinderViewModel: ObservableObject {
     func sort(using comparators: [KeyPathComparator<FileDetail>]) {
         currentSortOrder = comparators
         largeFiles.sort(using: comparators)
+        persistCache()
     }
 
     func toggleExclusion(for id: FileDetail.ID, isExcluded: Bool) {
@@ -134,6 +152,8 @@ final class LargeFilesFinderViewModel: ObservableObject {
                 preferencesStore.updateExclusion(for: path, excluded: false)
             }
         }
+
+        persistCache()
     }
 
     func delete(_ file: FileDetail) {
@@ -141,6 +161,7 @@ final class LargeFilesFinderViewModel: ObservableObject {
         do {
             try service.delete(paths: [file.path])
             removeFromState(file)
+            persistCache()
         } catch {
             handleDeletionError(error, affectedFiles: [file])
         }
@@ -153,6 +174,7 @@ final class LargeFilesFinderViewModel: ObservableObject {
         do {
             try service.delete(paths: paths)
             deletable.forEach(removeFromState(_:))
+            persistCache()
         } catch {
             handleDeletionError(error, affectedFiles: deletable)
         }
@@ -224,6 +246,60 @@ final class LargeFilesFinderViewModel: ObservableObject {
             let normalized = normalize(path: file.path)
             return storedPaths.contains(normalized) ? file.id : nil
         })
+    }
+
+    private func loadCacheIfAvailable() {
+        guard FileManager.default.fileExists(atPath: cacheURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: cacheURL)
+            let payload = try JSONDecoder().decode(CachePayload.self, from: data)
+            guard !payload.largeFiles.isEmpty else { return }
+
+            largeFiles = payload.largeFiles
+            scanCompleted = payload.scanCompleted
+            totalFiles = payload.totalFiles
+            scannedFiles = payload.scannedFiles
+            excludedFileIDs = payload.excludedFileIDs
+            selection = payload.selection.subtracting(payload.excludedFileIDs)
+            permissionIssue = payload.permissionIssue
+            permissionMessage = payload.permissionMessage
+            largeFiles.sort(using: currentSortOrder)
+        } catch {
+            Diagnostics.error(
+                category: .cleanup,
+                message: "Failed to load large file cache",
+                error: error,
+                metadata: ["path": cacheURL.path]
+            )
+        }
+    }
+
+    private func persistCache() {
+        let payload = CachePayload(
+            largeFiles: largeFiles,
+            scanCompleted: scanCompleted,
+            totalFiles: totalFiles,
+            scannedFiles: scannedFiles,
+            excludedFileIDs: excludedFileIDs,
+            selection: selection,
+            permissionIssue: permissionIssue,
+            permissionMessage: permissionMessage
+        )
+
+        let url = cacheURL
+        Task.detached(priority: .background) {
+            do {
+                let data = try JSONEncoder().encode(payload)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                Diagnostics.error(
+                    category: .cleanup,
+                    message: "Failed to persist large file cache",
+                    error: error,
+                    metadata: ["path": url.path]
+                )
+            }
+        }
     }
 
     private func normalize(path: String) -> String {
