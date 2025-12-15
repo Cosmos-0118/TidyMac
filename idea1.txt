@@ -1,7 +1,0 @@
-1) package manager page. using home brew we list most of the improtant packages like python java the packages,
-so users can easily install them in one click. 
- -- they should also able to select which version they wanna install. we show them all avaliable version that can be installed.
-2) but if the page is clicked. we should detect if homebrew is installed, if not install it, then run
-all the improtant homebrew commands like upgrade, doctor, cleanup etc etc.
-
-to see all the necessaey packages look at packages.txt

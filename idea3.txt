@@ -1,9 +1,0 @@
-this shows all the oackages that is installed in the system. and show if they can be upgradeable or not - then can also delete.
-
-lot of ppl strrugle with adding path.
-
-and a many strrugle with changing path too like for example three version of python is installed.
-and they need to use a different version for a task they need to do.
-i want to make that process easy.
-
-so create a page decicated to it.
