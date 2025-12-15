@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 struct DeveloperTools: View {
     @Environment(\.designSystemPalette) private var palette
+    @Namespace private var overlayNamespace
 
     @StateObject private var viewModel: DeveloperToolsViewModel
 
@@ -84,8 +85,19 @@ struct DeveloperTools: View {
                 Spacer(minLength: 0)
             }
             .padding(DesignSystem.Spacing.xLarge)
+            .animation(.spring(response: 0.45, dampingFraction: 0.85, blendDuration: 0.18), value: showOverlay)
+        }
+        .overlay(alignment: .center) {
+            if showOverlay {
+                overlayCard
+                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .center)))
+            }
         }
         .dynamicTypeSize(.medium ... .accessibility3)
+    }
+
+    private var showOverlay: Bool {
+        viewModel.activeOperation != nil
     }
 
     private var header: some View {
@@ -192,6 +204,47 @@ struct DeveloperTools: View {
         }
     }
 
+}
+
+private extension DeveloperTools {
+    var overlayCard: some View {
+        ZStack {
+            palette.background.opacity(0.55)
+                .ignoresSafeArea()
+
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(palette.surface.opacity(0.96))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(palette.accentGreen.opacity(0.25), lineWidth: 1)
+                )
+                .shadow(color: palette.accentGray.opacity(0.35), radius: 26, x: 0, y: 12)
+                .frame(maxWidth: 520, minHeight: 200)
+                .overlay {
+                    VStack(spacing: DesignSystem.Spacing.large) {
+                        HStack(spacing: DesignSystem.Spacing.small) {
+                            Image(systemName: "hammer.circle")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(palette.accentGreen)
+                            Text("Running Tooling Task")
+                                .font(DesignSystem.Typography.headline)
+                                .foregroundColor(palette.primaryText)
+                        }
+
+                        VStack(spacing: DesignSystem.Spacing.small) {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .tint(palette.accentGreen)
+                            Text("We’re applying your developer action. This usually finishes in a moment.")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(palette.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(DesignSystem.Spacing.xLarge)
+                }
+        }
+    }
 }
 
 // MARK: - Supporting Types

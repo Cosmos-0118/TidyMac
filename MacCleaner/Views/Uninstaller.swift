@@ -7,6 +7,7 @@ import AppKit
 
 struct Uninstaller: View {
     @Environment(\.designSystemPalette) private var palette
+    @Namespace private var overlayNamespace
 
     private let autoFetch: Bool
     @StateObject private var viewModel: UninstallerViewModel
@@ -45,6 +46,13 @@ struct Uninstaller: View {
                 Spacer(minLength: 0)
             }
             .padding(DesignSystem.Spacing.xLarge)
+            .animation(.spring(response: 0.45, dampingFraction: 0.85, blendDuration: 0.18), value: showOverlay)
+        }
+        .overlay(alignment: .center) {
+            if showOverlay {
+                overlayCard
+                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .center)))
+            }
         }
         .dynamicTypeSize(.medium ... .accessibility3)
         .onAppear {
@@ -82,6 +90,10 @@ struct Uninstaller: View {
         }) { app in
             uninstallReviewSheet(for: app)
         }
+    }
+
+    private var showOverlay: Bool {
+        viewModel.isLoading
     }
 
     private var header: some View {
@@ -382,6 +394,45 @@ struct Uninstaller: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var overlayCard: some View {
+        ZStack {
+            palette.background.opacity(0.55)
+                .ignoresSafeArea()
+
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(palette.surface.opacity(0.96))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(palette.accentGreen.opacity(0.25), lineWidth: 1)
+                )
+                .shadow(color: palette.accentGray.opacity(0.35), radius: 26, x: 0, y: 12)
+                .frame(maxWidth: 520, minHeight: 220)
+                .overlay {
+                    VStack(spacing: DesignSystem.Spacing.large) {
+                        HStack(spacing: DesignSystem.Spacing.small) {
+                            Image(systemName: "apps.iphone")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(palette.accentGreen)
+                            Text("Discovering Applications")
+                                .font(DesignSystem.Typography.headline)
+                                .foregroundColor(palette.primaryText)
+                        }
+
+                        VStack(spacing: DesignSystem.Spacing.small) {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .tint(palette.accentGreen)
+                            Text("Scanning installed apps and related data. Feel free to continue browsing.")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(palette.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(DesignSystem.Spacing.xLarge)
+                }
+        }
     }
 
     private var noResultsSidebarState: some View {

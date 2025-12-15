@@ -10,10 +10,13 @@ final class LargeFilesFinderViewModel: ObservableObject {
     @Published private(set) var permissionMessage: String?
     @Published private(set) var isScanning: Bool
     @Published var excludedFileIDs: Set<FileDetail.ID>
-    @Published var selection: Set<FileDetail.ID>
+    @Published var selection: Set<FileDetail.ID> {
+        didSet { persistCache() }
+    }
 
     private let service: LargeFileScanningService
     private let preferencesStore = DeletionPreferencesStore.shared
+    private let cacheURL = AppSupportStorage.fileURL(named: "large_files_cache.json")
     private var scanTask: Task<Void, Never>?
     private var didTriggerInitialScan = false
     private var currentSortOrder: [KeyPathComparator<FileDetail>]

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SystemCleanup: View {
 	@Environment(\.designSystemPalette) private var palette
+	@Namespace private var overlayNamespace
 
 	private let autoScan: Bool
 	@StateObject private var viewModel: SystemCleanupViewModel
@@ -67,6 +68,15 @@ struct SystemCleanup: View {
 				}
 			}
 			.padding(DesignSystem.Spacing.xLarge)
+			.animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0.2), value: showOverlay)
+		}
+		.overlay(alignment: .center) {
+			if showOverlay {
+				cleanupOverlay
+					.transition(
+						.opacity.combined(with: .scale(scale: 0.94, anchor: .center))
+					)
+			}
 		}
 		.dynamicTypeSize(.medium ... .accessibility3)
 		.onAppear {
@@ -79,6 +89,10 @@ struct SystemCleanup: View {
 		.onChange(of: selectedStep) { _ in
 			resetPageForSelection()
 		}
+	}
+
+	private var showOverlay: Bool {
+		viewModel.isRunning || viewModel.isScanning
 	}
 
 	private var header: some View {
@@ -161,6 +175,52 @@ struct SystemCleanup: View {
 				Text("Gathering cache, large file, and Xcode artifact information…")
 					.font(DesignSystem.Typography.caption)
 					.foregroundColor(palette.secondaryText)
+			}
+		}
+	}
+
+	private var cleanupOverlay: some View {
+		ZStack {
+			palette.background.opacity(0.55)
+				.ignoresSafeArea()
+
+			VStack(spacing: DesignSystem.Spacing.medium) {
+				RoundedRectangle(cornerRadius: 18, style: .continuous)
+					.fill(palette.surface.opacity(0.96))
+					.overlay(
+						RoundedRectangle(cornerRadius: 18, style: .continuous)
+							.stroke(palette.accentGreen.opacity(0.25), lineWidth: 1)
+					)
+					.shadow(color: palette.accentGray.opacity(0.35), radius: 28, x: 0, y: 12)
+					.frame(maxWidth: 520)
+					.frame(height: 260)
+					.overlay(alignment: .center) {
+						VStack(spacing: DesignSystem.Spacing.large) {
+							HStack(spacing: DesignSystem.Spacing.small) {
+								Image(systemName: viewModel.isScanning ? "sparkles" : "arrow.2.circlepath")
+									.font(.system(size: 24, weight: .semibold))
+									.foregroundColor(palette.accentGreen)
+								Text(viewModel.isScanning ? "Preparing Cleanup" : "Running Cleanup")
+									.font(DesignSystem.Typography.headline)
+									.foregroundColor(palette.primaryText)
+							}
+
+							VStack(spacing: DesignSystem.Spacing.small) {
+								ProgressView(value: viewModel.isRunning ? viewModel.overallProgress : nil)
+									.progressViewStyle(.linear)
+									.tint(palette.accentGreen)
+									.scaleEffect(x: 1.05, y: 1.05, anchor: .center)
+								Text(viewModel.isScanning ? "Gathering cache, large file, and Xcode artifact info" : progressDescription)
+									.font(DesignSystem.Typography.caption)
+									.foregroundColor(palette.secondaryText)
+							}
+
+							Text("You can keep exploring while we prepare your cleanup.")
+								.font(DesignSystem.Typography.body)
+								.foregroundColor(palette.secondaryText)
+						}
+						.padding(DesignSystem.Spacing.xLarge)
+					}
 			}
 		}
 	}
@@ -313,6 +373,7 @@ struct SystemCleanup: View {
 		return $viewModel.categories[index]
 	}
 
+}
 
 private struct CategorySidebarRow: View {
 	@Environment(\.designSystemPalette) private var palette
@@ -490,7 +551,6 @@ private struct CategoryDetailView: View {
 		let end = min(start + pageSize, total)
 		return Array(category.items.indices[start..<end])
 	}
-}
 }
 
 private struct CleanupCategoryCard: View {
