@@ -159,12 +159,7 @@ struct Dashboard: View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
             if let battery = viewModel.batteryInfo {
                 HStack(spacing: DesignSystem.Spacing.medium) {
-                    Gauge(value: battery.percentage, in: 0...100) {
-                        Text("Battery")
-                    }
-                    .tint(palette.accentGreen)
-                    .gaugeStyle(.accessoryCircularCapacity)
-                    .frame(width: 64, height: 64)
+                    batteryMeter(for: battery)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(Int(battery.percentage))%")
@@ -199,6 +194,24 @@ struct Dashboard: View {
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(palette.secondaryText)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func batteryMeter(for battery: BatteryInfo) -> some View {
+        if #available(macOS 13.0, *) {
+            Gauge(value: battery.percentage, in: 0...100) {
+                Text("Battery")
+            }
+            .tint(palette.accentGreen)
+            .gaugeStyle(.accessoryCircularCapacity)
+            .frame(width: 64, height: 64)
+        } else {
+            ProgressView(value: battery.percentage, total: 100)
+                .progressViewStyle(.circular)
+                .tint(palette.accentGreen)
+                .frame(width: 64, height: 64)
+                .accessibilityLabel("Battery")
         }
     }
 

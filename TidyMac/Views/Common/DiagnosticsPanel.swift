@@ -28,41 +28,52 @@ struct DiagnosticsPanel: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                filterBar
-                    .padding(.horizontal, DesignSystem.Spacing.medium)
-                    .padding(.vertical, DesignSystem.Spacing.small)
-                    .background(palette.surface.opacity(0.9))
+        navigationContainer
+            .frame(minWidth: 520, minHeight: 420)
+            .accessibilityIdentifier("DiagnosticsPanel")
+    }
 
-                if filteredEntries.isEmpty {
-                    emptyState
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(filteredEntries) { entry in
-                        DiagnosticsRow(entry: entry, palette: palette)
-                            .listRowBackground(Color.clear)
-                    }
-                    .listStyle(.inset)
-                    .scrollContentBackground(.hidden)
-                    .background(palette.background)
+    @ViewBuilder
+    private var navigationContainer: some View {
+        if #available(macOS 13.0, *) {
+            NavigationStack { panelContent }
+        } else {
+            NavigationView { panelContent }
+        }
+    }
+
+    private var panelContent: some View {
+        VStack(spacing: 0) {
+            filterBar
+                .padding(.horizontal, DesignSystem.Spacing.medium)
+                .padding(.vertical, DesignSystem.Spacing.small)
+                .background(palette.surface.opacity(0.9))
+
+            if filteredEntries.isEmpty {
+                emptyState
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(filteredEntries) { entry in
+                    DiagnosticsRow(entry: entry, palette: palette)
+                        .listRowBackground(Color.clear)
                 }
-            }
-            .background(palette.background.ignoresSafeArea())
-            .navigationTitle("Diagnostics")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                        .keyboardShortcut(.cancelAction)
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Clear") { center.clear() }
-                        .disabled(center.entries.isEmpty)
-                }
+                .listStyle(.inset)
+                .hideScrollContentBackgroundIfAvailable()
+                .background(palette.background)
             }
         }
-        .frame(minWidth: 520, minHeight: 420)
-        .accessibilityIdentifier("DiagnosticsPanel")
+        .background(palette.background.ignoresSafeArea())
+        .navigationTitle("Diagnostics")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Clear") { center.clear() }
+                    .disabled(center.entries.isEmpty)
+            }
+        }
     }
 
     private var filterBar: some View {

@@ -9,29 +9,40 @@ struct ContentView: View {
     @State private var showDiagnostics = false
 
     var body: some View {
-        NavigationSplitView {
-            Sidebar(selection: $selection)
-        } detail: {
-            detailView(for: selection)
-                .environment(\.designSystemPalette, palette)
-                .preferredColorScheme(.dark)
-        }
-        .environment(\.designSystemPalette, palette)
-        .preferredColorScheme(.dark)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showDiagnostics = true
-                } label: {
-                    Label("Diagnostics", systemImage: "ladybug")
+        navigationContainer
+            .environment(\.designSystemPalette, palette)
+            .preferredColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showDiagnostics = true
+                    } label: {
+                        Label("Diagnostics", systemImage: "ladybug")
+                    }
+                    .help("Open diagnostics panel")
+                    .accessibilityIdentifier("DiagnosticsButton")
                 }
-                .help("Open diagnostics panel")
-                .accessibilityIdentifier("DiagnosticsButton")
             }
-        }
-        .sheet(isPresented: $showDiagnostics) {
-            DiagnosticsPanel(center: diagnosticsCenter)
-                .environment(\.designSystemPalette, palette)
+            .sheet(isPresented: $showDiagnostics) {
+                DiagnosticsPanel(center: diagnosticsCenter)
+                    .environment(\.designSystemPalette, palette)
+            }
+    }
+
+    @ViewBuilder
+    private var navigationContainer: some View {
+        if #available(macOS 13.0, *) {
+            NavigationSplitView {
+                Sidebar(selection: $selection)
+            } detail: {
+                detailView(for: selection)
+            }
+        } else {
+            NavigationView {
+                Sidebar(selection: $selection)
+                detailView(for: selection)
+            }
+            .navigationViewStyle(.columns)
         }
     }
 
@@ -171,7 +182,7 @@ struct Sidebar: View {
                     }
                     .padding(.vertical, DesignSystem.Spacing.small)
                 }
-                .scrollIndicators(.hidden)
+                .hideScrollIndicatorsIfAvailable()
 
                 Spacer(minLength: 0)
 

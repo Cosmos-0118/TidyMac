@@ -192,7 +192,7 @@ struct Uninstaller: View {
                     }
                     .padding(.vertical, DesignSystem.Spacing.small)
                 }
-                .scrollIndicators(.hidden)
+                .hideScrollIndicatorsIfAvailable()
             }
         }
         .padding(DesignSystem.Spacing.large)
@@ -280,7 +280,7 @@ struct Uninstaller: View {
                 }
                 .padding(DesignSystem.Spacing.large)
             }
-            .scrollIndicators(.hidden)
+            .hideScrollIndicatorsIfAvailable()
             .frame(maxWidth: .infinity, alignment: .top)
             .background(palette.surface.opacity(0.95))
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -567,7 +567,7 @@ struct Uninstaller: View {
                     }
                     .padding(.vertical, DesignSystem.Spacing.small)
                 }
-                .scrollIndicators(.hidden)
+                .hideScrollIndicatorsIfAvailable()
                 .frame(maxHeight: 320)
             }
 

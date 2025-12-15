@@ -1,6 +1,7 @@
 import SwiftUI
+
 #if canImport(AppKit)
-import AppKit
+    import AppKit
 #endif
 
 struct StatusCard<Content: View>: View {
@@ -11,7 +12,10 @@ struct StatusCard<Content: View>: View {
 
     @Environment(\.designSystemPalette) private var palette
 
-    init(title: String, iconName: String, accent: Color, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        title: String, iconName: String, accent: Color,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
         self.iconName = iconName
         self.accent = accent
@@ -45,7 +49,7 @@ struct StatusCard<Content: View>: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(accent.opacity(0.25), lineWidth: 1)
         )
-    .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isSummaryElement)
     }
 }
@@ -64,7 +68,17 @@ struct MetricGauge: View {
     @Environment(\.designSystemPalette) private var palette
 
     var body: some View {
-        StatusCard(title: configuration.title, iconName: configuration.systemImage, accent: configuration.accent) {
+        StatusCard(
+            title: configuration.title, iconName: configuration.systemImage,
+            accent: configuration.accent
+        ) {
+            meter
+        }
+    }
+
+    @ViewBuilder
+    private var meter: some View {
+        if #available(macOS 13.0, *) {
             Gauge(value: configuration.value, in: 0...100) {
                 Text(configuration.title)
             } currentValueLabel: {
@@ -76,30 +90,45 @@ struct MetricGauge: View {
             .tint(configuration.accent)
             .accessibilityLabel(configuration.accessibilityLabel)
             .accessibilityValue(Text(String(format: "%.0f percent", configuration.value)))
+        } else {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                Text(String(format: "%.0f%%", configuration.value))
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(palette.primaryText)
+                ProgressView(value: configuration.value, total: 100)
+                    .tint(configuration.accent)
+                    .accessibilityLabel(configuration.accessibilityLabel)
+                    .accessibilityValue(Text(String(format: "%.0f percent", configuration.value)))
+            }
         }
     }
 }
 
 #if canImport(AppKit)
-struct FullDiskAccessButton: View {
-    var label: String = "Open Full Disk Access Settings"
+    struct FullDiskAccessButton: View {
+        var label: String = "Open Full Disk Access Settings"
 
-    var body: some View {
-        Button {
-            guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") else { return }
-            NSWorkspace.shared.open(url)
-        } label: {
-            Label(label, systemImage: "gear")
+        var body: some View {
+            Button {
+                guard
+                    let url = URL(
+                        string:
+                            "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+                    )
+                else { return }
+                NSWorkspace.shared.open(url)
+            } label: {
+                Label(label, systemImage: "gear")
+            }
+            .buttonStyle(SecondaryButtonStyle())
         }
-        .buttonStyle(SecondaryButtonStyle())
     }
-}
 #else
-struct FullDiskAccessButton: View {
-    var label: String = "Open Full Disk Access Settings"
+    struct FullDiskAccessButton: View {
+        var label: String = "Open Full Disk Access Settings"
 
-    var body: some View {
-        EmptyView()
+        var body: some View {
+            EmptyView()
+        }
     }
-}
 #endif
