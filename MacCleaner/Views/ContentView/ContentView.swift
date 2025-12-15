@@ -163,8 +163,6 @@ struct Sidebar: View {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
                 header
                 searchField
-                metricsCard
-
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
                         ForEach(filteredDestinations) { item in
@@ -235,43 +233,6 @@ struct Sidebar: View {
                 .stroke(palette.accentGray.opacity(0.3), lineWidth: 1)
         )
         .accessibilityLabel("Search MacCleaner sections")
-    }
-
-    @ViewBuilder
-    private var metricsCard: some View {
-        if let snapshot = metrics {
-            StatusCard(title: "Live Snapshot", iconName: "waveform.path.ecg", accent: palette.accentGreen) {
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
-                    metricRow(label: "CPU", value: snapshot.cpuUsage, accent: palette.accentGreen)
-                    metricRow(label: "Memory", value: snapshot.memoryUsage, accent: palette.accentRed)
-                    metricRow(label: "Disk", value: snapshot.diskUsage, accent: palette.accentGray)
-                }
-            }
-        } else {
-            StatusCard(title: "Gathering Metrics", iconName: "timer", accent: palette.accentGray) {
-                Text("Collecting CPU, memory, and disk data…")
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundColor(palette.secondaryText)
-            }
-        }
-    }
-
-    private func metricRow(label: String, value: Double, accent: Color) -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
-            HStack {
-                Text(label)
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundColor(palette.secondaryText)
-                Spacer()
-                Text(Self.formatPercentage(value))
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundColor(palette.primaryText)
-            }
-
-            ProgressView(value: value / 100)
-                .tint(accent)
-                .progressViewStyle(.linear)
-        }
     }
 
     private func destinationRow(for item: SidebarItem) -> some View {

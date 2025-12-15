@@ -7,6 +7,8 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var cpuUsage: Double = 0
     @Published private(set) var memoryUsage: Double = 0
     @Published private(set) var diskUsage: Double = 0
+    @Published private(set) var batteryInfo: BatteryInfo?
+    @Published private(set) var systemUptime: TimeInterval = 0
 
     private let monitorService: SystemMonitorServiceProtocol
     private var metricsTask: Task<Void, Never>?
@@ -47,5 +49,7 @@ final class DashboardViewModel: ObservableObject {
         memoryUsage = snapshot.memoryUsage
         diskUsage = snapshot.diskUsage
         storageInfo = snapshot.storageInfo
+        batteryInfo = snapshot.batteryInfo
+        systemUptime = snapshot.systemUptime
     }
 }

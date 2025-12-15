@@ -1,11 +1,27 @@
 import Foundation
 import Darwin
+#if os(macOS)
+import IOKit.ps
+#endif
+
+struct BatteryInfo: Equatable {
+    let percentage: Double
+    let isCharging: Bool
+    let isCharged: Bool
+    let powerSourceState: String?
+    let cycleCount: Int?
+    let health: String?
+    let timeRemainingMinutes: Int?
+    let timeToFullMinutes: Int?
+}
 
 struct SystemMetricsSnapshot {
     let cpuUsage: Double
     let memoryUsage: Double
     let diskUsage: Double
     let storageInfo: StorageInfo?
+    let batteryInfo: BatteryInfo?
+    let systemUptime: TimeInterval
 }
 
 @preconcurrency
@@ -43,7 +59,9 @@ final class SystemMonitorService: SystemMonitorServiceProtocol {
         let memory = memoryUsage()
         let disk = diskUsage()
         let storage = getStorageInfo()
-        return SystemMetricsSnapshot(cpuUsage: cpu, memoryUsage: memory, diskUsage: disk, storageInfo: storage)
+        let battery = batteryInfo()
+        let uptime = ProcessInfo.processInfo.systemUptime
+        return SystemMetricsSnapshot(cpuUsage: cpu, memoryUsage: memory, diskUsage: disk, storageInfo: storage, batteryInfo: battery, systemUptime: uptime)
     }
 
     private func cpuUsage() -> Double {
@@ -101,16 +119,12 @@ final class SystemMonitorService: SystemMonitorServiceProtocol {
     }
 
     private func memoryUsage() -> Double {
-        var taskInfo = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<integer_t>.size)
-        let result: kern_return_t = withUnsafeMutablePointer(to: &taskInfo) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(
-                    mach_task_self_,
-                    task_flavor_t(MACH_TASK_BASIC_INFO),
-                    $0,
-                    &count
-                )
+        // Prefer system-wide memory for accuracy over app-only resident size.
+        var stats = vm_statistics64()
+        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &stats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
             }
         }
 
@@ -118,7 +132,7 @@ final class SystemMonitorService: SystemMonitorServiceProtocol {
             if !didLogMemoryError {
                 Diagnostics.error(
                     category: .dashboard,
-                    message: "task_info returned error for memory usage.",
+                    message: "host_statistics64 returned error for memory usage.",
                     metadata: ["code": "\(result)"]
                 )
                 didLogMemoryError = true
@@ -126,10 +140,22 @@ final class SystemMonitorService: SystemMonitorServiceProtocol {
             return 0
         }
 
-        let usedMemory = Double(taskInfo.resident_size)
-        let totalMemory = Double(ProcessInfo.processInfo.physicalMemory)
-        guard totalMemory > 0 else { return 0 }
-        let usage = (usedMemory / totalMemory) * 100
+        var pageSize: vm_size_t = 0
+        host_page_size(mach_host_self(), &pageSize)
+        let page = Double(pageSize)
+
+        let active = Double(stats.active_count) * page
+        let inactive = Double(stats.inactive_count) * page
+        let wired = Double(stats.wire_count) * page
+        let compressed = Double(stats.compressor_page_count) * page
+        let used = active + inactive + wired + compressed
+
+        let free = Double(stats.free_count) * page
+        let speculative = Double(stats.speculative_count) * page
+        let total = used + free + speculative
+
+        guard total > 0 else { return 0 }
+        let usage = (used / total) * 100
         return max(0, min(usage, 100))
     }
 
@@ -155,5 +181,65 @@ final class SystemMonitorService: SystemMonitorServiceProtocol {
             return 0
         }
         return 0
+    }
+
+    private func batteryInfo() -> BatteryInfo? {
+#if os(macOS)
+        guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else { return nil }
+        guard let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef], !sources.isEmpty else { return nil }
+
+        for source in sources {
+            guard let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any] else { continue }
+            guard let type = description[kIOPSTypeKey] as? String, type == kIOPSInternalBatteryType else { continue }
+
+            let currentCapacity = description[kIOPSCurrentCapacityKey as String] as? Int ?? 0
+            let maxCapacity = description[kIOPSMaxCapacityKey as String] as? Int ?? 0
+            guard maxCapacity > 0 else { continue }
+
+            let percentage = max(0, min(Double(currentCapacity) / Double(maxCapacity) * 100, 100))
+            let isCharging = (description[kIOPSIsChargingKey as String] as? Bool) ?? false
+            let isCharged = (description[kIOPSIsChargedKey as String] as? Bool) ?? false
+            let powerSourceState = description[kIOPSPowerSourceStateKey as String] as? String
+            let cycleCount = description["CycleCount"] as? Int
+            let health = (description[kIOPSBatteryHealthKey as String] as? String).flatMap { normalizeHealth($0) }
+
+            func normalizedTime(_ key: String) -> Int? {
+                guard let value = description[key] as? Int else { return nil }
+                return value >= 0 ? value : nil
+            }
+
+            let timeRemaining = powerSourceState == kIOPSBatteryPowerValue ? normalizedTime(kIOPSTimeToEmptyKey as String) : nil
+            let timeToFull = (powerSourceState == kIOPSACPowerValue && isCharging) ? normalizedTime(kIOPSTimeToFullChargeKey as String) : nil
+
+            return BatteryInfo(
+                percentage: percentage,
+                isCharging: isCharging,
+                isCharged: isCharged,
+                powerSourceState: powerSourceState,
+                cycleCount: cycleCount,
+                health: health,
+                timeRemainingMinutes: timeRemaining,
+                timeToFullMinutes: timeToFull
+            )
+        }
+
+        return nil
+#else
+    return nil
+#endif
+    }
+}
+
+private func normalizeHealth(_ raw: String) -> String {
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return "" }
+    let lower = trimmed.lowercased()
+    switch lower {
+    case "good": return "Good"
+    case "check battery", "checkbattery": return "Check Battery"
+    case "fair": return "Fair"
+    case "poor": return "Poor"
+    default:
+        return trimmed.prefix(1).uppercased() + trimmed.dropFirst()
     }
 }
