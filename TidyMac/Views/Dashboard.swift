@@ -15,22 +15,25 @@ struct Dashboard: View {
         _viewModel = StateObject(wrappedValue: DashboardViewModel())
     }
 
-    init(
-        previewStorageInfo: StorageInfo?, previewMetrics: DashboardMetricSnapshot,
-        previewBattery: BatteryInfo? = nil, previewUptime: TimeInterval = 0
-    ) {
-        let snapshot = SystemMetricsSnapshot(
-            cpuUsage: previewMetrics.cpu,
-            memoryUsage: previewMetrics.memory,
-            diskUsage: previewMetrics.disk,
-            storageInfo: previewStorageInfo,
-            batteryInfo: previewBattery,
-            systemUptime: previewUptime
-        )
-        let service = PreviewSystemMonitorService(snapshot: snapshot)
-        _viewModel = StateObject(
-            wrappedValue: DashboardViewModel(monitorService: service, initialSnapshot: snapshot))
-    }
+    #if DEBUG
+        init(
+            previewStorageInfo: StorageInfo?, previewMetrics: DashboardMetricSnapshot,
+            previewBattery: BatteryInfo? = nil, previewUptime: TimeInterval = 0
+        ) {
+            let snapshot = SystemMetricsSnapshot(
+                cpuUsage: previewMetrics.cpu,
+                memoryUsage: previewMetrics.memory,
+                diskUsage: previewMetrics.disk,
+                storageInfo: previewStorageInfo,
+                batteryInfo: previewBattery,
+                systemUptime: previewUptime
+            )
+            let service = PreviewSystemMonitorService(snapshot: snapshot)
+            _viewModel = StateObject(
+                wrappedValue: DashboardViewModel(monitorService: service, initialSnapshot: snapshot)
+            )
+        }
+    #endif
 
     var body: some View {
         ScrollView {
