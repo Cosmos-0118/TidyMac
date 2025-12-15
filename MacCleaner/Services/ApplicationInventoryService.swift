@@ -54,13 +54,15 @@ struct ApplicationRelatedItem: Identifiable, Equatable {
     let path: String
     let description: String
     let isDirectory: Bool
+    let size: Int64?
 
-    init(path: String, description: String, isDirectory: Bool) {
+    init(path: String, description: String, isDirectory: Bool, size: Int64?) {
         let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
         self.id = standardized
         self.path = standardized
         self.description = description
         self.isDirectory = isDirectory
+        self.size = size
     }
 }
 
@@ -230,17 +232,20 @@ private extension FileSystemApplicationInventoryService {
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: standardized, isDirectory: &isDirectory) else { return }
             guard seen.insert(standardized).inserted else { return }
-            results.append(ApplicationRelatedItem(path: standardized, description: description, isDirectory: isDirectory.boolValue))
+            let itemSize = sizeForPath(standardized, isDirectory: isDirectory.boolValue)
+            results.append(ApplicationRelatedItem(path: standardized, description: description, isDirectory: isDirectory.boolValue, size: itemSize))
         }
 
         let bundleURL = application.resolvedBundleURL
         var isBundleDirectory: ObjCBool = false
         let bundleExists = fileManager.fileExists(atPath: bundleURL.path, isDirectory: &isBundleDirectory)
+        let bundleSize = sizeForPath(bundleURL.path, isDirectory: isBundleDirectory.boolValue)
         results.append(
             ApplicationRelatedItem(
                 path: bundleURL.path,
                 description: "Application Bundle",
-                isDirectory: bundleExists ? isBundleDirectory.boolValue : true
+                isDirectory: bundleExists ? isBundleDirectory.boolValue : true,
+                size: bundleSize
             )
         )
         seen.insert(bundleURL.standardizedFileURL.path)
@@ -260,6 +265,10 @@ private extension FileSystemApplicationInventoryService {
             let preferencesRoot = library.appendingPathComponent("Preferences", isDirectory: true)
             let savedStateRoot = library.appendingPathComponent("Saved Application State", isDirectory: true)
             let groupContainersRoot = library.appendingPathComponent("Group Containers", isDirectory: true)
+            let receiptsRoot = library.appendingPathComponent("Receipts", isDirectory: true)
+            let httpStorageRoot = library.appendingPathComponent("HTTPStorages", isDirectory: true)
+            let appScriptsRoot = library.appendingPathComponent("Application Scripts", isDirectory: true)
+            let syncedPreferencesRoot = library.appendingPathComponent("SyncedPreferences", isDirectory: true)
 
             for name in directoryNames {
                 appendIfExists(applicationSupportRoot.appendingPathComponent(name, isDirectory: true), description: "Application Support")
@@ -267,6 +276,8 @@ private extension FileSystemApplicationInventoryService {
                 appendIfExists(logsRoot.appendingPathComponent(name, isDirectory: true), description: "Logs")
                 appendIfExists(containersRoot.appendingPathComponent(name, isDirectory: true), description: "Containers")
                 appendIfExists(webKitRoot.appendingPathComponent(name, isDirectory: true), description: "WebKit")
+                appendIfExists(appScriptsRoot.appendingPathComponent(name, isDirectory: true), description: "Application Scripts")
+                appendIfExists(httpStorageRoot.appendingPathComponent(name, isDirectory: true), description: "HTTP Storage")
             }
 
             for name in groupNames {
@@ -276,6 +287,9 @@ private extension FileSystemApplicationInventoryService {
             for identifier in preferenceIdentifiers {
                 appendIfExists(preferencesRoot.appendingPathComponent("\(identifier).plist", isDirectory: false), description: "Preferences")
                 appendIfExists(savedStateRoot.appendingPathComponent("\(identifier).savedState", isDirectory: true), description: "Saved Application State")
+                appendIfExists(receiptsRoot.appendingPathComponent("\(identifier).bom", isDirectory: false), description: "Receipts")
+                appendIfExists(receiptsRoot.appendingPathComponent("\(identifier).plist", isDirectory: false), description: "Receipts")
+                appendIfExists(syncedPreferencesRoot.appendingPathComponent("\(identifier).plist", isDirectory: false), description: "Synced Preferences")
             }
         }
 
@@ -286,9 +300,13 @@ private extension FileSystemApplicationInventoryService {
             "Application Support": 3,
             "Caches": 4,
             "Preferences": 5,
-            "Saved Application State": 6,
-            "Logs": 7,
-            "WebKit": 8
+            "Receipts": 6,
+            "Saved Application State": 7,
+            "Logs": 8,
+            "WebKit": 9,
+            "Application Scripts": 10,
+            "HTTP Storage": 11,
+            "Synced Preferences": 12
         ]
 
         results.sort { lhs, rhs in
@@ -386,5 +404,31 @@ private extension FileSystemApplicationInventoryService {
         variants.insert(trimmed.lowercased())
 
         return variants.filter { !$0.isEmpty }.sorted()
+    }
+}
+
+private extension FileSystemApplicationInventoryService {
+    func sizeForPath(_ path: String, isDirectory: Bool) -> Int64? {
+        if !isDirectory {
+            if let attrs = try? fileManager.attributesOfItem(atPath: path), let size = attrs[.size] as? NSNumber {
+                return size.int64Value
+            }
+            return nil
+        }
+
+        var total: Int64 = 0
+        if let enumerator = fileManager.enumerator(atPath: path) {
+            for case let entry as String in enumerator {
+                let fullPath = (path as NSString).appendingPathComponent(entry)
+                var isDir: ObjCBool = false
+                guard fileManager.fileExists(atPath: fullPath, isDirectory: &isDir) else { continue }
+                if isDir.boolValue { continue }
+                if let attrs = try? fileManager.attributesOfItem(atPath: fullPath), let fileSize = attrs[.size] as? NSNumber {
+                    total += fileSize.int64Value
+                }
+            }
+        }
+
+        return total > 0 ? total : nil
     }
 }

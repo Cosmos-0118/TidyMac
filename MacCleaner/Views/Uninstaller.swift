@@ -445,6 +445,13 @@ struct Uninstaller: View {
                     .foregroundColor(palette.secondaryText)
             }
 
+            let totalSize = reviewItems.compactMap { $0.size }.reduce(0, +)
+            let totalLabel: String = {
+                let itemLabel = reviewItems.count == 1 ? "item" : "items"
+                let sizeLabel = totalSize > 0 ? formatByteCount(totalSize) : "Size unavailable"
+                return "\(reviewItems.count) \(itemLabel) · \(sizeLabel)"
+            }()
+
             if reviewIsLoading {
                 HStack(spacing: DesignSystem.Spacing.medium) {
                     ProgressView()
@@ -461,6 +468,10 @@ struct Uninstaller: View {
                     .foregroundColor(palette.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
+                Text(totalLabel)
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(palette.secondaryText)
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
                         ForEach(reviewItems) { item in
@@ -507,9 +518,21 @@ struct Uninstaller: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(item.isDirectory ? palette.accentGreen : palette.accentGray)
 
-                Text(item.description)
-                    .font(DesignSystem.Typography.headline)
-                    .foregroundColor(palette.primaryText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.description)
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(palette.primaryText)
+
+                    if let size = item.size {
+                        Text(formatByteCount(size))
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(palette.secondaryText)
+                    } else {
+                        Text("Size unavailable")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(palette.secondaryText)
+                    }
+                }
             }
 
             Text(item.path)
