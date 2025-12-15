@@ -2,9 +2,6 @@
 
 import SwiftUI
 import Combine
-#if os(macOS)
-import AppKit
-#endif
 
 @main
 struct MacCleanerApp: App {
@@ -23,10 +20,64 @@ struct MacCleanerApp: App {
             guard phase == .inactive || phase == .background else { return }
             AppCacheCleaner.clean()
         }
-#if os(macOS)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-            AppCacheCleaner.clean()
+    }
+}
+
+// Lightweight cache cleanup invoked during app exit/background transitions.
+private enum AppCacheCleaner {
+    static func clean(fileManager: FileManager = .default) {
+        let bundleID = Bundle.main.bundleIdentifier ?? "MacCleaner"
+        var targets: [URL] = []
+
+        if let cacheRoot = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            targets.append(cacheRoot.appendingPathComponent(bundleID, isDirectory: true))
+            targets.append(cacheRoot.appendingPathComponent("MacCleaner", isDirectory: true))
         }
-#endif
+
+        let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        targets.append(tempRoot.appendingPathComponent(bundleID, isDirectory: true))
+        targets.append(tempRoot.appendingPathComponent("MacCleaner", isDirectory: true))
+
+        if let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let container = appSupport.appendingPathComponent("MacCleaner", isDirectory: true)
+            targets.append(contentsOf: contents(of: container, fileManager: fileManager))
+        }
+
+        for target in targets {
+            removeIfExists(target, fileManager: fileManager)
+        }
+    }
+
+    private static func contents(of directory: URL, fileManager: FileManager) -> [URL] {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return []
+        }
+        do {
+            return try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+        } catch {
+            Diagnostics.warning(
+                category: .cleanup,
+                message: "Failed to enumerate app support cache directory.",
+                metadata: ["path": directory.path, "error": String(describing: error)]
+            )
+            return []
+        }
+    }
+
+    private static func removeIfExists(_ url: URL, fileManager: FileManager) {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return }
+
+        do {
+            try fileManager.removeItem(at: url)
+            Diagnostics.info(category: .cleanup, message: "Cleared app cache on exit.", metadata: ["path": url.path])
+        } catch {
+            Diagnostics.warning(
+                category: .cleanup,
+                message: "Failed to clear cache on exit.",
+                metadata: ["path": url.path, "error": String(describing: error)]
+            )
+        }
     }
 }
