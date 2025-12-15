@@ -11,14 +11,14 @@ struct SystemCleanup: View {
 
 	init(
 			services: [AnyCleanupService] = CleanupServiceRegistry.default,
-			autoScan: Bool = true,
+			autoScan: Bool = false,
 			viewModel: SystemCleanupViewModel? = nil
 		) {
 			self.autoScan = autoScan
 			if let viewModel {
 				_viewModel = StateObject(wrappedValue: viewModel)
 			} else {
-				_viewModel = StateObject(wrappedValue: SystemCleanupViewModel(services: services))
+				_viewModel = StateObject(wrappedValue: SystemCleanupViewModel.shared)
 			}
 		}
 
@@ -117,16 +117,14 @@ struct SystemCleanup: View {
 
 	private var actionBar: some View {
 		HStack(spacing: DesignSystem.Spacing.medium) {
-			Button(allSelected ? "Deselect All" : "Select All") {
-				viewModel.selectAll(!allSelected)
+			Button(viewModel.categories.isEmpty ? "Scan" : "Rescan") {
+				Task { await viewModel.scanServices() }
 			}
-			.buttonStyle(SecondaryButtonStyle())
+			.buttonStyle(PrimaryActionButtonStyle())
 			.disabled(viewModel.isScanning || viewModel.isRunning)
 
-			Button {
-				Task { await viewModel.scanServices() }
-			} label: {
-				Label("Rescan", systemImage: "arrow.clockwise")
+			Button(allSelected ? "Deselect All" : "Select All") {
+				viewModel.selectAll(!allSelected)
 			}
 			.buttonStyle(SecondaryButtonStyle())
 			.disabled(viewModel.isScanning || viewModel.isRunning)

@@ -218,8 +218,9 @@ private extension DeveloperTools {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(palette.accentGreen.opacity(0.25), lineWidth: 1)
                 )
-                .shadow(color: palette.accentGray.opacity(0.35), radius: 26, x: 0, y: 12)
-                .frame(maxWidth: 520, minHeight: 200)
+                .shadow(color: palette.accentGray.opacity(0.35), radius: 28, x: 0, y: 12)
+                .frame(maxWidth: 520)
+                .frame(height: 260)
                 .overlay {
                     VStack(spacing: DesignSystem.Spacing.large) {
                         HStack(spacing: DesignSystem.Spacing.small) {

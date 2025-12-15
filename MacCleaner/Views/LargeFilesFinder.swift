@@ -11,7 +11,7 @@ struct LargeFilesFinder: View {
     @StateObject private var viewModel: LargeFilesFinderViewModel
     @State private var sortOrder: [KeyPathComparator<FileDetail>]
 
-    init(autoScan: Bool = true, viewModel: LargeFilesFinderViewModel? = nil) {
+    init(autoScan: Bool = false, viewModel: LargeFilesFinderViewModel? = nil) {
         self.autoScan = autoScan
         let resolvedModel = viewModel ?? LargeFilesFinderViewModel.shared
         _viewModel = StateObject(wrappedValue: resolvedModel)
@@ -65,7 +65,7 @@ struct LargeFilesFinder: View {
     }
 
     private var showOverlay: Bool {
-        viewModel.isScanning || !viewModel.scanCompleted
+        viewModel.isScanning
     }
 
     private var selectionBinding: Binding<Set<FileDetail.ID>> {
@@ -81,10 +81,20 @@ struct LargeFilesFinder: View {
                 .font(DesignSystem.Typography.title)
                 .foregroundColor(palette.primaryText)
 
-            if viewModel.scanCompleted {
-                Text(scanSummary)
+            HStack(spacing: DesignSystem.Spacing.medium) {
+                Text(viewModel.scanCompleted ? scanSummary : "Press Scan to map large and old files.")
                     .font(DesignSystem.Typography.caption)
                     .foregroundColor(palette.secondaryText)
+
+                Spacer()
+
+                Button {
+                    viewModel.startScan()
+                } label: {
+                    Label(viewModel.scanCompleted ? "Rescan" : "Scan", systemImage: viewModel.scanCompleted ? "arrow.clockwise" : "play.circle")
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(viewModel.isScanning)
             }
         }
     }
@@ -104,7 +114,9 @@ struct LargeFilesFinder: View {
     private var contentSection: some View {
         permissionAlert
 
-        if viewModel.scanCompleted {
+        if viewModel.isScanning {
+            loadingState
+        } else if viewModel.scanCompleted {
             if viewModel.largeFiles.isEmpty {
                 StatusCard(title: "No Findings", iconName: "checkmark.circle", accent: palette.accentGreen) {
                     Text("Great news! We didn't detect any large, outdated files that need attention.")
@@ -115,7 +127,25 @@ struct LargeFilesFinder: View {
                 tableSection
             }
         } else {
-            loadingState
+            readyState
+        }
+    }
+
+    private var readyState: some View {
+        StatusCard(title: "Ready to Scan", iconName: "folder.badge.clock", accent: palette.accentGreen) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                Text("Find large and old files when you’re ready.")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(palette.primaryText)
+
+                Button {
+                    viewModel.startScan()
+                } label: {
+                    Label("Start Scan", systemImage: "play.circle")
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(viewModel.isScanning)
+            }
         }
     }
 

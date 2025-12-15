@@ -2,7 +2,11 @@ import Foundation
 
 @MainActor
 final class SystemCleanupViewModel: ObservableObject {
-    @Published var categories: [CleanupCategory]
+    static let shared = SystemCleanupViewModel()
+
+    @Published var categories: [CleanupCategory] {
+        didSet { persistCache() }
+    }
     @Published var stepStates: [CleanupStep: CleanupStepState]
     @Published var stepProgress: [CleanupStep: Double]
     @Published var isScanning: Bool
@@ -12,7 +16,54 @@ final class SystemCleanupViewModel: ObservableObject {
 
     private let services: [AnyCleanupService]
     private let safePathFilter = SafePathFilter()
+    private let cacheURL = AppSupportStorage.fileURL(named: "system_cleanup_cache.json")
     private var hasPerformedInitialScan = false
+
+    private struct CachedCategory: Codable {
+        let step: Int
+        let isEnabled: Bool
+        let error: String?
+        let note: String?
+        let items: [CachedItem]
+    }
+
+    private struct CachedItem: Codable {
+        let path: String
+        let name: String
+        let size: Int64?
+        let detail: String?
+        let isSelected: Bool
+        let reasons: [CachedReason]
+        let confidence: CleanupConfidence?
+    }
+
+    private struct CachedReason: Codable {
+        let id: String
+        let label: String
+        let detail: String?
+    }
+
+    private enum CachedStepState: Codable {
+        case pending
+        case running
+        case success(message: String)
+        case failure(message: String, recovery: String?)
+    }
+
+    private struct CachedSummary: Codable {
+        let success: Bool
+        let headline: String
+        let details: [String]
+        let recovery: String?
+    }
+
+    private struct CachePayload: Codable {
+        let categories: [CachedCategory]
+        let stepStates: [Int: CachedStepState]
+        let stepProgress: [Int: Double]
+        let runSummary: CachedSummary?
+        let overallProgress: Double
+    }
 
     init(services: [AnyCleanupService] = CleanupServiceRegistry.default) {
         self.services = services
@@ -23,10 +74,13 @@ final class SystemCleanupViewModel: ObservableObject {
         self.isRunning = false
         self.overallProgress = 0
         self.runSummary = nil
+
+        loadCacheIfAvailable()
     }
 
     func handleAppear(autoScan: Bool) {
-        guard autoScan, !hasPerformedInitialScan else { return }
+        guard autoScan else { return }
+        guard !hasPerformedInitialScan else { return }
         hasPerformedInitialScan = true
         Task { await scanServices() }
     }
@@ -66,6 +120,7 @@ final class SystemCleanupViewModel: ObservableObject {
         stepProgress.removeAll(keepingCapacity: true)
         overallProgress = 0
         isScanning = false
+        persistCache()
     }
 
     func runCleanup() async {
@@ -170,9 +225,8 @@ final class SystemCleanupViewModel: ObservableObject {
         isRunning = false
         overallProgress = success ? 1 : overallProgress
 
-        if success {
-            await scanServices(preservingSummary: true)
-        }
+        persistCache()
+
     }
 
     func selectAll(_ enabled: Bool) {
@@ -234,6 +288,162 @@ final class SystemCleanupViewModel: ObservableObject {
             metadata["sizeReadable"] = formatByteCount(sizeTotal)
         }
         return metadata
+    }
+
+    private func loadCacheIfAvailable() {
+        guard FileManager.default.fileExists(atPath: cacheURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: cacheURL)
+            let payload = try JSONDecoder().decode(CachePayload.self, from: data)
+
+            let restoredCategories: [CleanupCategory] = payload.categories.compactMap { cached in
+                guard let step = CleanupStep(rawValue: cached.step) else { return nil }
+                var items: [CleanupCategory.CleanupItem] = cached.items.map { item in
+                    var reasons: [CleanupReason] = item.reasons.map { CleanupReason(code: $0.id, label: $0.label, detail: $0.detail) }
+                    return CleanupCategory.CleanupItem(
+                        path: item.path,
+                        name: item.name,
+                        size: item.size,
+                        detail: item.detail,
+                        isSelected: item.isSelected,
+                        reasons: reasons,
+                        confidence: item.confidence,
+                        metadata: nil
+                    )
+                }
+                items = safePathFilter.filter(items)
+                var category = CleanupCategory(step: step, items: items, isEnabled: cached.isEnabled, error: cached.error, note: cached.note)
+                category.isEnabled = cached.isEnabled && !items.isEmpty
+                return category
+            }
+
+            if !restoredCategories.isEmpty {
+                categories = restoredCategories.sorted { $0.step.rawValue < $1.step.rawValue }
+            }
+
+            let restoredStates: [CleanupStep: CleanupStepState] = Dictionary(uniqueKeysWithValues: payload.stepStates.compactMap { entry in
+                guard let step = CleanupStep(rawValue: entry.key) else { return nil }
+                return (step, mapCachedState(entry.value))
+            })
+
+            if !restoredStates.isEmpty {
+                stepStates = restoredStates
+            }
+
+            let restoredProgress: [CleanupStep: Double] = Dictionary(uniqueKeysWithValues: payload.stepProgress.compactMap { entry in
+                guard let step = CleanupStep(rawValue: entry.key) else { return nil }
+                return (step, entry.value)
+            })
+            if !restoredProgress.isEmpty {
+                stepProgress = restoredProgress
+                overallProgress = payload.overallProgress
+            }
+
+            if let summary = payload.runSummary {
+                runSummary = CleanupRunSummary(
+                    success: summary.success,
+                    headline: summary.headline,
+                    details: summary.details,
+                    recovery: summary.recovery
+                )
+            }
+        } catch {
+            Diagnostics.error(
+                category: .cleanup,
+                message: "Failed to load cleanup cache",
+                error: error,
+                metadata: ["path": cacheURL.path]
+            )
+        }
+    }
+
+    private func persistCache() {
+        let cachedCategories: [CachedCategory] = categories.map { category in
+            CachedCategory(
+                step: category.step.rawValue,
+                isEnabled: category.isEnabled,
+                error: category.error,
+                note: category.note,
+                items: category.items.map { item in
+                    CachedItem(
+                        path: item.path,
+                        name: item.name,
+                        size: item.size,
+                        detail: item.detail,
+                        isSelected: item.isSelected,
+                        reasons: item.reasons.map { CachedReason(id: $0.id, label: $0.label, detail: $0.detail) },
+                        confidence: item.confidence
+                    )
+                }
+            )
+        }
+
+        let cachedStates: [Int: CachedStepState] = Dictionary(uniqueKeysWithValues: stepStates.map { entry in
+            (entry.key.rawValue, mapState(entry.value))
+        })
+
+        let cachedProgress: [Int: Double] = Dictionary(uniqueKeysWithValues: stepProgress.map { ($0.key.rawValue, $0.value) })
+
+        let cachedSummary: CachedSummary?
+        if let summary = runSummary {
+            cachedSummary = CachedSummary(
+                success: summary.success,
+                headline: summary.headline,
+                details: summary.details,
+                recovery: summary.recovery
+            )
+        } else {
+            cachedSummary = nil
+        }
+
+        let payload = CachePayload(
+            categories: cachedCategories,
+            stepStates: cachedStates,
+            stepProgress: cachedProgress,
+            runSummary: cachedSummary,
+            overallProgress: overallProgress
+        )
+
+        let url = cacheURL
+        Task.detached(priority: .background) {
+            do {
+                let data = try JSONEncoder().encode(payload)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                Diagnostics.error(
+                    category: .cleanup,
+                    message: "Failed to persist cleanup cache",
+                    error: error,
+                    metadata: ["path": url.path]
+                )
+            }
+        }
+    }
+
+    private func mapState(_ state: CleanupStepState) -> CachedStepState {
+        switch state {
+        case .pending:
+            return .pending
+        case .running:
+            return .running
+        case .success(let message):
+            return .success(message: message)
+        case .failure(let message, let recovery):
+            return .failure(message: message, recovery: recovery)
+        }
+    }
+
+    private func mapCachedState(_ state: CachedStepState) -> CleanupStepState {
+        switch state {
+        case .pending:
+            return .pending
+        case .running:
+            return .running
+        case .success(let message):
+            return .success(message: message)
+        case .failure(let message, let recovery):
+            return .failure(message: message, recovery: recovery)
+        }
     }
 }
 
